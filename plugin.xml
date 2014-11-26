@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            name="Density"
+            id="sbt-plugin">
+      </category>
+      <view
+            name="SBT View"
+            icon="icons/sample.gif"
+            category="sbt-plugin"
+            class="com.density.sbtplugin.views.SbtView"
+            id="com.density.sbtplugin.views.SbtView">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               ratio="0.5"
+               relative="org.eclipse.ui.views.ProblemView"
+               relationship="right"
+               id="com.density.sbtplugin.views.SbtView">
+         </view>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml">
+      </contexts>
+   </extension>
+   <extension
+         point="org.eclipse.ui.console.consolePatternMatchListeners">
+      <consolePatternMatchListener
+            class="com.density.sbtplugin.views.SbtPatternMatchListener"
+            id="sbt-plugin.consolePatternMatchListener"
+            regex=".*SbtPatternMatchListener.*">
+         <enablement></enablement>
+      </consolePatternMatchListener>
+   </extension>
+
+</plugin>

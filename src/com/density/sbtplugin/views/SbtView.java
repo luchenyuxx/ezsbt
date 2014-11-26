@@ -1,0 +1,515 @@
+package com.density.sbtplugin.views;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Scanner;
+
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.util.LocalSelectionTransfer;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.ITreeContentProvider;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.FileTransfer;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.console.ConsolePlugin;
+import org.eclipse.ui.console.IConsole;
+import org.eclipse.ui.console.IConsoleManager;
+import org.eclipse.ui.console.MessageConsole;
+import org.eclipse.ui.part.DrillDownAdapter;
+import org.eclipse.ui.part.ViewPart;
+import org.osgi.framework.Bundle;
+
+/**
+ * This sample class demonstrates how to plug-in a new workbench view. The view
+ * shows data obtained from the model. The sample creates a dummy model on the
+ * fly, but a real implementation would connect to the model available either in
+ * this or another plug-in (e.g. the workspace). The view is connected to the
+ * model using a content provider.
+ * <p>
+ * The view uses a label provider to define how model objects should be
+ * presented in the view. Each view can present the same model objects using
+ * different labels and icons, if needed. Alternatively, a single label provider
+ * can be shared between views in order to ensure that objects of the same type
+ * are presented in the same way everywhere.
+ * <p>
+ */
+
+public class SbtView extends ViewPart {
+
+	/**
+	 * The ID of the view as specified by the extension.
+	 */
+	public static final String ID = "com.density.sbtplugin.views.SbtView";
+
+	private TreeViewer viewer;
+	private DrillDownAdapter drillDownAdapter;
+	private Action removeAllAction;
+	private Action stopAllAction;
+	private Action removeProjectAction;
+	private Action doubleClickAction;
+	private Action editCommandAction;
+
+	private HashMap<String, PrintWriter> processWriterMap = new HashMap<String, PrintWriter>();
+
+	/*
+	 * The content provider class is responsible for providing objects to the
+	 * view. It can wrap existing objects in adapters or simply return objects
+	 * as-is. These objects may be sensitive to the current input of the view,
+	 * or ignore it and always show the same content (like Task List, for
+	 * example).
+	 */
+
+	class ViewContentProvider implements IStructuredContentProvider,
+			ITreeContentProvider {
+		private TreeParent invisibleRoot;
+
+		public void inputChanged(Viewer v, Object oldInput, Object newInput) {
+		}
+
+		public void dispose() {
+		}
+
+		public Object[] getElements(Object parent) {
+			if (parent.equals(getViewSite())) {
+				if (invisibleRoot == null)
+					initialize();
+				return getChildren(invisibleRoot);
+			}
+			return getChildren(parent);
+		}
+
+		public Object getParent(Object child) {
+			if (child instanceof TreeObject) {
+				return ((TreeObject) child).getParent();
+			}
+			return null;
+		}
+
+		public Object[] getChildren(Object parent) {
+			if (parent instanceof TreeParent) {
+				return ((TreeParent) parent).getChildren();
+			}
+			return new Object[0];
+		}
+
+		public boolean hasChildren(Object parent) {
+			if (parent instanceof TreeParent)
+				return ((TreeParent) parent).hasChildren();
+			return false;
+		}
+
+		public TreeParent getInvisibleRoot() {
+			return invisibleRoot;
+		}
+
+		public void setInvisibleRoot(TreeParent invisibleRoot) {
+			this.invisibleRoot = invisibleRoot;
+		}
+
+		/*
+		 * We will set up a dummy model to initialize tree heararchy. In a real
+		 * code, you will connect to a real model and expose its hierarchy.
+		 */
+		private void initialize() {
+			invisibleRoot = new TreeParent("");
+		}
+	}
+
+	class ViewLabelProvider extends LabelProvider {
+
+		public String getText(Object obj) {
+			return obj.toString();
+		}
+
+		public Image getImage(Object obj) {
+			String imageKey = ISharedImages.IMG_OBJ_ELEMENT;
+			if (obj instanceof TreeParent)
+				imageKey = ISharedImages.IMG_OBJ_FOLDER;
+			return PlatformUI.getWorkbench().getSharedImages()
+					.getImage(imageKey);
+		}
+	}
+
+	class NameSorter extends ViewerSorter {
+	}
+
+	/**
+	 * The constructor.
+	 */
+	public SbtView() {
+	}
+
+	/**
+	 * This is a callback that will allow us to create the viewer and initialize
+	 * it.
+	 */
+	public void createPartControl(Composite parent) {
+		viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+		drillDownAdapter = new DrillDownAdapter(viewer);
+		viewer.setContentProvider(new ViewContentProvider());
+		viewer.setLabelProvider(new ViewLabelProvider());
+		viewer.setSorter(new NameSorter());
+		viewer.setInput(getViewSite());
+
+		// Create the help context id for the viewer's control
+		PlatformUI.getWorkbench().getHelpSystem()
+				.setHelp(viewer.getControl(), "sbt-plugin.viewer");
+		makeActions();
+		addDragAndDrop();
+		hookContextMenu();
+		hookDoubleClickAction();
+		contributeToActionBars();
+	}
+
+	protected void addDragAndDrop() {
+		int ops = DND.DROP_COPY | DND.DROP_MOVE;
+		Transfer[] transfers = { FileTransfer.getInstance(),
+				TextTransfer.getInstance(),
+				LocalSelectionTransfer.getTransfer() };
+		viewer.addDropSupport(ops | DND.DROP_DEFAULT, transfers,
+				new SbtViewerDropAdapter(viewer));
+	}
+
+	private void hookContextMenu() {
+		MenuManager menuMgr = new MenuManager("#PopupMenu");
+		menuMgr.setRemoveAllWhenShown(true);
+		menuMgr.addMenuListener(new IMenuListener() {
+			public void menuAboutToShow(IMenuManager manager) {
+				SbtView.this.fillContextMenu(manager);
+			}
+		});
+		Menu menu = menuMgr.createContextMenu(viewer.getControl());
+		viewer.getControl().setMenu(menu);
+		getSite().registerContextMenu(menuMgr, viewer);
+	}
+
+	private void contributeToActionBars() {
+		IActionBars bars = getViewSite().getActionBars();
+		fillLocalPullDown(bars.getMenuManager());
+		fillLocalToolBar(bars.getToolBarManager());
+	}
+
+	private void fillLocalPullDown(IMenuManager manager) {
+		manager.add(removeAllAction);
+		manager.add(new Separator());
+		manager.add(stopAllAction);
+	}
+
+	private void fillContextMenu(IMenuManager manager) {
+		ISelection selection = viewer.getSelection();
+		Object obj = ((IStructuredSelection) selection).getFirstElement();
+		if (obj.getClass().equals(TreeParent.class)) {
+			manager.add(removeProjectAction);
+		}
+		if (obj.getClass().equals(TreeObject.class)) {
+			manager.add(editCommandAction);
+		}
+		// manager.add(removeAllAction);
+		// manager.add(stopAllAction);
+		// manager.add(new Separator());
+		// drillDownAdapter.addNavigationActions(manager);
+		// manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+	}
+
+	private void fillLocalToolBar(IToolBarManager manager) {
+		manager.add(removeAllAction);
+		manager.add(stopAllAction);
+		manager.add(new Separator());
+		drillDownAdapter.addNavigationActions(manager);
+	}
+
+	private void makeActions() {
+		makeRemoveAllAction();
+		makeStopAllAction();
+		makeDoubleClickAction();
+		makeRemoveProjectAction();
+		makeEditCommandAction();
+	}
+	protected void makeEditCommandAction(){
+		editCommandAction = new Action() {
+			public void run(){
+				
+			}
+		};
+		editCommandAction.setText("Edit");
+		editCommandAction.setToolTipText("edit command button");
+	}
+	protected void makeRemoveAllAction() {
+		removeAllAction = new Action() {
+			public void run() {
+				closeAllProcess();
+				cleanView();
+			}
+		};
+		removeAllAction.setText("Remove all");
+		removeAllAction
+				.setToolTipText("close all sbt processes and clear view");
+		removeAllAction.setImageDescriptor(PlatformUI.getWorkbench()
+				.getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVEALL));
+	}
+
+	protected void makeStopAllAction() {
+		stopAllAction = new Action() {
+			public void run() {
+				closeAllProcess();
+			}
+		};
+		stopAllAction.setText("Stop all");
+		stopAllAction.setToolTipText("close all sbt processes");
+		stopAllAction.setImageDescriptor(PlatformUI.getWorkbench()
+				.getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_ELCL_STOP));
+	}
+
+	protected void makeDoubleClickAction() {
+		doubleClickAction = new Action() {
+			public void run() {
+				doDoubleClickAction();
+			}
+		};
+	}
+
+	protected void makeRemoveProjectAction() {
+		removeProjectAction = new Action() {
+			public void run() {
+				doRemoveProjectAction();
+			}
+		};
+		removeProjectAction.setText("Remove");
+		removeProjectAction
+				.setToolTipText("close project's sbt and remove from view");
+		removeProjectAction.setImageDescriptor(PlatformUI.getWorkbench()
+				.getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+	}
+
+	protected void doRemoveProjectAction() {
+		ISelection selection = viewer.getSelection();
+		Object obj = ((IStructuredSelection) selection).getFirstElement();
+		if (obj.getClass().equals(TreeParent.class)) {
+			TreeParent selectedNode = (TreeParent) obj;
+			remove(selectedNode);
+		}
+	}
+
+	protected void doDoubleClickAction() {
+		ISelection selection = viewer.getSelection();
+		Object obj = ((IStructuredSelection) selection).getFirstElement();
+		if (obj.getClass().isAssignableFrom(TreeObject.class)) {
+			TreeObject selectedNode = (TreeObject) obj;
+			TreeParent parent = selectedNode.getParent();
+			String path = parent.getName();
+			if (selectedNode.getName() == PluginConstants.COMPILE_NAME) {
+				sbtCompile(path);
+			}
+			if (selectedNode.getName() == PluginConstants.CLEAN_NAME) {
+				sbtClean(path);
+			}
+			if (selectedNode.getName() == PluginConstants.START_SBT_NAME) {
+				startSbt(parent);
+			}
+			if (selectedNode.getName() == PluginConstants.EXIT_NAME) {
+				exitSbt(path);
+			}
+			if (selectedNode.getName() == PluginConstants.RUN_NAME) {
+				sbtRun(path);
+			}
+		}
+	}
+
+	private void hookDoubleClickAction() {
+		viewer.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent event) {
+				doubleClickAction.run();
+			}
+		});
+	}
+
+	private void showMessage(String message) {
+		MessageDialog.openInformation(viewer.getControl().getShell(),
+				"Sbt View", message);
+	}
+
+	protected void startSbt(TreeParent parent) {
+		String path = parent.getName();
+		if (processWriterMap.keySet().contains(path)) {
+			showMessage("sbt for " + path + " is running");
+		} else {
+			try {
+				ProcessBuilder processBuilder = new ProcessBuilder("java",
+						"-Xms1024m", "-Xmx1024m",
+						"-XX:ReservedCodeCacheSize=128m",
+						"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m",
+						"-jar", getSbtLaunchPath()).directory(new File(path));
+				processBuilder.environment().put("JAVA_HOME", getJavaHome());
+				Process sbtProcess = processBuilder.start();
+				final InputStream inStream = sbtProcess.getInputStream();
+				final IProject project = parent.getProject();
+				final String consoleName = path
+						.substring(path.lastIndexOf("/") + 1);
+				new Thread(new Runnable() {
+					public void run() {
+						MessageConsole myConsole = findConsole(consoleName,
+								project);
+						ConsolePrinter printer = new ConsolePrinter(myConsole);
+						printer.println("Starting...");
+						BufferedReader reader = new BufferedReader(
+								new InputStreamReader(inStream));
+						Scanner scan = new Scanner(reader);
+						while (scan.hasNextLine()) {
+							printer.println(scan.nextLine());
+						}
+					}
+				}).start();
+				OutputStream outStream = sbtProcess.getOutputStream();
+				PrintWriter pWriter = new PrintWriter(outStream);
+				processWriterMap.put(path, pWriter);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	protected void printConsoleLine(String line) {
+
+	}
+
+	protected String getJavaHome() {
+		String java_home = null;
+		if (System.getProperty("os.name").toLowerCase().contains("win"))
+			java_home = new File(System.getProperty("java.home"))
+					.getParentFile().getAbsolutePath();
+		else
+			java_home = System.getProperty("java.home");
+		return java_home;
+	}
+
+	protected String getSbtLaunchPath() {
+		Bundle bundle = Platform.getBundle("sbt-plugin");
+		URL url = bundle.getEntry("resources/sbt-launch.jar");
+		String result = null;
+		try {
+			result = FileLocator.resolve(url).getPath();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	protected void sbtCompile(String path) {
+		writeCommand(path, PluginConstants.COMPILE_COMMAND);
+	}
+
+	protected void sbtClean(String path) {
+		writeCommand(path, PluginConstants.CLEAN_COMMAND);
+	}
+
+	protected void exitSbt(String path) {
+		writeCommand(path, PluginConstants.EXIT_COMMAND);
+		closeProcess(path);
+	}
+
+	protected void sbtRun(String path) {
+		writeCommand(path, PluginConstants.RUN_COMMAND);
+	}
+
+	protected void writeCommand(String path, String command) {
+		PrintWriter writer = processWriterMap.get(path);
+		if (writer != null) {
+			writer.println(command);
+			writer.flush();
+		} else {
+			showMessage("can't find sbt process on path " + path);
+		}
+	}
+
+	protected void closeProcess(String path) {
+		PrintWriter writer = processWriterMap.get(path);
+		if (writer != null) {
+			writer.close();
+			processWriterMap.remove(path);
+		} else {
+			showMessage("can't find sbt process on path " + path);
+		}
+	}
+
+	protected void closeAllProcess() {
+		for (String path : processWriterMap.keySet()) {
+			exitSbt(path);
+		}
+	}
+
+	protected void cleanView() {
+		ViewContentProvider contentProvider = (ViewContentProvider) viewer
+				.getContentProvider();
+		contentProvider.setInvisibleRoot(new TreeParent(""));
+		viewer.refresh();
+	}
+
+	protected void remove(TreeParent project) {
+		TreeParent root = ((ViewContentProvider) viewer.getContentProvider())
+				.getInvisibleRoot();
+		if (processWriterMap.keySet().contains(project.getName())) {
+			exitSbt(project.getName());
+		}
+		root.removeChild(project);
+		viewer.refresh();
+	}
+
+	/**
+	 * Passing the focus request to the viewer's control.
+	 */
+	public void setFocus() {
+		viewer.getControl().setFocus();
+	}
+
+	private MessageConsole findConsole(String name, IProject project) {
+		ConsolePlugin plugin = ConsolePlugin.getDefault();
+		IConsoleManager conMan = plugin.getConsoleManager();
+		IConsole[] existing = conMan.getConsoles();
+		for (int i = 0; i < existing.length; i++)
+			if (name.equals(existing[i].getName()))
+				return (MessageConsole) existing[i];
+		// no console found, so create a new one
+		MessageConsole myConsole = new MessageConsole(name, null);
+		conMan.addConsoles(new IConsole[] { myConsole });
+		SbtPatternMatchListener sbtPatternMatchListener = new SbtPatternMatchListener(
+				project);
+		myConsole.addPatternMatchListener(sbtPatternMatchListener);
+		return myConsole;
+	}
+
+}
