@@ -38,9 +38,9 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 			IProject project) {
 		TreeParent newSbtProject = new TreeParent(path, project);
 		newSbtProject.addChild(new TreeObject(PluginConstants.START_SBT_NAME));
-		newSbtProject.addChild(new TreeObject(PluginConstants.COMPILE_NAME));
-		newSbtProject.addChild(new TreeObject(PluginConstants.CLEAN_NAME));
-		newSbtProject.addChild(new TreeObject(PluginConstants.EXIT_NAME));
+		newSbtProject.addChild(new TreeObject(PluginConstants.COMPILE_NAME,PluginConstants.COMPILE_COMMAND));
+		newSbtProject.addChild(new TreeObject(PluginConstants.CLEAN_NAME,PluginConstants.CLEAN_COMMAND));
+		newSbtProject.addChild(new TreeObject(PluginConstants.EXIT_NAME,PluginConstants.EXIT_COMMAND));
 		root.addChild(newSbtProject);
 		getViewer().refresh();
 	}

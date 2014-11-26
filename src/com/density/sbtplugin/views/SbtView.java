@@ -32,6 +32,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.FileTransfer;
@@ -260,7 +261,7 @@ public class SbtView extends ViewPart {
 	protected void makeEditCommandAction(){
 		editCommandAction = new Action() {
 			public void run(){
-				
+				doEditCommandAction();
 			}
 		};
 		editCommandAction.setText("Edit");
@@ -315,10 +316,15 @@ public class SbtView extends ViewPart {
 				.getSharedImages()
 				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
-
+	protected void doEditCommandAction(){
+		Object obj = getSelectedObject();
+		TreeObject target = (TreeObject)obj;
+		EditCommandDialog dialog = new EditCommandDialog(viewer.getControl().getShell(),target,viewer);
+		dialog.create();
+		dialog.open();
+	}
 	protected void doRemoveProjectAction() {
-		ISelection selection = viewer.getSelection();
-		Object obj = ((IStructuredSelection) selection).getFirstElement();
+		Object obj = getSelectedObject();
 		if (obj.getClass().equals(TreeParent.class)) {
 			TreeParent selectedNode = (TreeParent) obj;
 			remove(selectedNode);
@@ -326,28 +332,22 @@ public class SbtView extends ViewPart {
 	}
 
 	protected void doDoubleClickAction() {
-		ISelection selection = viewer.getSelection();
-		Object obj = ((IStructuredSelection) selection).getFirstElement();
+		Object obj = getSelectedObject();
 		if (obj.getClass().isAssignableFrom(TreeObject.class)) {
 			TreeObject selectedNode = (TreeObject) obj;
 			TreeParent parent = selectedNode.getParent();
 			String path = parent.getName();
-			if (selectedNode.getName() == PluginConstants.COMPILE_NAME) {
-				sbtCompile(path);
-			}
-			if (selectedNode.getName() == PluginConstants.CLEAN_NAME) {
-				sbtClean(path);
-			}
 			if (selectedNode.getName() == PluginConstants.START_SBT_NAME) {
 				startSbt(parent);
-			}
-			if (selectedNode.getName() == PluginConstants.EXIT_NAME) {
-				exitSbt(path);
-			}
-			if (selectedNode.getName() == PluginConstants.RUN_NAME) {
-				sbtRun(path);
+			}else{
+				writeCommand(path, selectedNode.getSbtCommand());
 			}
 		}
+	}
+	protected Object getSelectedObject(){
+		ISelection selection = viewer.getSelection();
+		Object obj = ((IStructuredSelection) selection).getFirstElement();
+		return obj;
 	}
 
 	private void hookDoubleClickAction() {
