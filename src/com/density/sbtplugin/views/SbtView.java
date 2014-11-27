@@ -84,6 +84,8 @@ public class SbtView extends ViewPart {
 	private Action removeProjectAction;
 	private Action doubleClickAction;
 	private Action editCommandAction;
+	private Action addCommandAction;
+	private Action removeCommandAction;
 
 	private HashMap<String, PrintWriter> processWriterMap = new HashMap<String, PrintWriter>();
 
@@ -234,13 +236,17 @@ public class SbtView extends ViewPart {
 	}
 
 	private void fillContextMenu(IMenuManager manager) {
-		ISelection selection = viewer.getSelection();
-		Object obj = ((IStructuredSelection) selection).getFirstElement();
+		Object obj = getSelectedObject();
 		if (obj.getClass().equals(TreeParent.class)) {
 			manager.add(removeProjectAction);
+			manager.add(addCommandAction);
 		}
 		if (obj.getClass().equals(TreeObject.class)) {
-			manager.add(editCommandAction);
+			TreeObject target = (TreeObject) obj;
+			if (!target.getName().equals(PluginConstants.START_SBT_NAME)) {
+				manager.add(editCommandAction);
+				manager.add(removeCommandAction);
+			}
 		}
 		// manager.add(removeAllAction);
 		// manager.add(stopAllAction);
@@ -262,6 +268,34 @@ public class SbtView extends ViewPart {
 		makeDoubleClickAction();
 		makeRemoveProjectAction();
 		makeEditCommandAction();
+		makeAddCommandAction();
+		makeRemoveCommandAction();
+	}
+
+	protected void makeAddCommandAction() {
+		addCommandAction = new Action() {
+			public void run() {
+				doAddCommandAction();
+			}
+		};
+		addCommandAction.setText("Add command");
+		addCommandAction.setToolTipText("Add command button");
+		addCommandAction.setImageDescriptor(PlatformUI.getWorkbench()
+				.getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_OBJ_ADD));
+	}
+
+	protected void makeRemoveCommandAction() {
+		removeCommandAction = new Action() {
+			public void run() {
+				doRemoveCommandAction();
+			}
+		};
+		removeCommandAction.setText("Remove command");
+		removeCommandAction.setToolTipText("Remove command button");
+		removeCommandAction.setImageDescriptor(PlatformUI.getWorkbench()
+				.getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
 
 	protected void makeEditCommandAction() {
@@ -324,6 +358,20 @@ public class SbtView extends ViewPart {
 				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
 
+	protected void doRemoveCommandAction() {
+		TreeObject command = (TreeObject) getSelectedObject();
+		command.getParent().removeChild(command);
+		viewer.refresh();
+	}
+
+	protected void doAddCommandAction() {
+		TreeParent container = (TreeParent) getSelectedObject();
+		AddCommandDialog dialog = new AddCommandDialog(viewer.getControl()
+				.getShell(), container, viewer);
+		dialog.create();
+		dialog.open();
+	}
+
 	protected void doEditCommandAction() {
 		Object obj = getSelectedObject();
 		TreeObject target = (TreeObject) obj;
@@ -343,12 +391,15 @@ public class SbtView extends ViewPart {
 
 	protected void doDoubleClickAction() {
 		Object obj = getSelectedObject();
-		if (obj.getClass().isAssignableFrom(TreeObject.class)) {
+		if (obj.getClass().equals(TreeObject.class)) {
 			TreeObject selectedNode = (TreeObject) obj;
 			TreeParent parent = selectedNode.getParent();
 			String path = parent.getName();
-			if (selectedNode.getName() == PluginConstants.START_SBT_NAME) {
+			if (selectedNode.getName().equals(PluginConstants.START_SBT_NAME)) {
 				startSbt(parent);
+			} else if (selectedNode.getSbtCommand().equals(
+					PluginConstants.EXIT_COMMAND)) {
+				exitSbt(path);
 			} else {
 				writeCommand(path, selectedNode.getSbtCommand());
 			}
