@@ -1,7 +1,7 @@
 package com.density.sbtplugin.views;
 
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.debug.ui.console.FileLink;
@@ -12,9 +12,9 @@ import org.eclipse.ui.console.TextConsole;
 
 public class SbtPatternMatchListener implements IPatternMatchListener {
 	private TextConsole console;
-	private IProject project;
-	public SbtPatternMatchListener(IProject project){
-		this.project = project;
+	private IContainer container;
+	public SbtPatternMatchListener(IContainer container){
+		this.container = container;
 	}
 	@Override
 	public void connect(TextConsole console) {
@@ -55,10 +55,10 @@ public class SbtPatternMatchListener implements IPatternMatchListener {
 	protected void addFileLink(String line,int linkOffset, int linkLength) {
 		String[] splitedLine = line.split(":");
 		String filePath = splitedLine[0].trim();
-		String relativeFilePath = filePath.split(console.getName(), 2)[1];
+		String relativeFilePath = filePath.replace(container.getRawLocation().toString(), "");
 		int fileLineNumber = Integer.parseInt(splitedLine[1].trim());
 		IPath location = new Path(relativeFilePath);
-		IFile file = project.getFile(location);
+		IFile file = container.getFile(location);
 		FileLink fileLink = new FileLink(file, null, -1, -1, fileLineNumber);
 		try {
 			console.addHyperlink(fileLink, linkOffset, linkLength);

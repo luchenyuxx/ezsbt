@@ -11,7 +11,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.action.Action;
@@ -32,7 +32,6 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.FileTransfer;
@@ -42,7 +41,10 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IMemento;
 import org.eclipse.ui.ISharedImages;
+import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
@@ -76,6 +78,7 @@ public class SbtView extends ViewPart {
 
 	private TreeViewer viewer;
 	private DrillDownAdapter drillDownAdapter;
+	private ViewContentProvider viewContentProvider = new ViewContentProvider();
 	private Action removeAllAction;
 	private Action stopAllAction;
 	private Action removeProjectAction;
@@ -132,6 +135,8 @@ public class SbtView extends ViewPart {
 		}
 
 		public TreeParent getInvisibleRoot() {
+			if (invisibleRoot == null)
+				initialize();
 			return invisibleRoot;
 		}
 
@@ -179,7 +184,7 @@ public class SbtView extends ViewPart {
 	public void createPartControl(Composite parent) {
 		viewer = new TreeViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		drillDownAdapter = new DrillDownAdapter(viewer);
-		viewer.setContentProvider(new ViewContentProvider());
+		viewer.setContentProvider(viewContentProvider);
 		viewer.setLabelProvider(new ViewLabelProvider());
 		viewer.setSorter(new NameSorter());
 		viewer.setInput(getViewSite());
@@ -258,15 +263,17 @@ public class SbtView extends ViewPart {
 		makeRemoveProjectAction();
 		makeEditCommandAction();
 	}
-	protected void makeEditCommandAction(){
+
+	protected void makeEditCommandAction() {
 		editCommandAction = new Action() {
-			public void run(){
+			public void run() {
 				doEditCommandAction();
 			}
 		};
 		editCommandAction.setText("Edit");
 		editCommandAction.setToolTipText("edit command button");
 	}
+
 	protected void makeRemoveAllAction() {
 		removeAllAction = new Action() {
 			public void run() {
@@ -316,13 +323,16 @@ public class SbtView extends ViewPart {
 				.getSharedImages()
 				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
-	protected void doEditCommandAction(){
+
+	protected void doEditCommandAction() {
 		Object obj = getSelectedObject();
-		TreeObject target = (TreeObject)obj;
-		EditCommandDialog dialog = new EditCommandDialog(viewer.getControl().getShell(),target,viewer);
+		TreeObject target = (TreeObject) obj;
+		EditCommandDialog dialog = new EditCommandDialog(viewer.getControl()
+				.getShell(), target, viewer);
 		dialog.create();
 		dialog.open();
 	}
+
 	protected void doRemoveProjectAction() {
 		Object obj = getSelectedObject();
 		if (obj.getClass().equals(TreeParent.class)) {
@@ -339,12 +349,13 @@ public class SbtView extends ViewPart {
 			String path = parent.getName();
 			if (selectedNode.getName() == PluginConstants.START_SBT_NAME) {
 				startSbt(parent);
-			}else{
+			} else {
 				writeCommand(path, selectedNode.getSbtCommand());
 			}
 		}
 	}
-	protected Object getSelectedObject(){
+
+	protected Object getSelectedObject() {
 		ISelection selection = viewer.getSelection();
 		Object obj = ((IStructuredSelection) selection).getFirstElement();
 		return obj;
@@ -377,13 +388,13 @@ public class SbtView extends ViewPart {
 				processBuilder.environment().put("JAVA_HOME", getJavaHome());
 				Process sbtProcess = processBuilder.start();
 				final InputStream inStream = sbtProcess.getInputStream();
-				final IProject project = parent.getProject();
+				final IContainer container = parent.getContainer();
 				final String consoleName = path
 						.substring(path.lastIndexOf("/") + 1);
 				new Thread(new Runnable() {
 					public void run() {
 						MessageConsole myConsole = findConsole(consoleName,
-								project);
+								container);
 						ConsolePrinter printer = new ConsolePrinter(myConsole);
 						printer.println("Starting...");
 						BufferedReader reader = new BufferedReader(
@@ -496,7 +507,7 @@ public class SbtView extends ViewPart {
 		viewer.getControl().setFocus();
 	}
 
-	private MessageConsole findConsole(String name, IProject project) {
+	private MessageConsole findConsole(String name, IContainer container) {
 		ConsolePlugin plugin = ConsolePlugin.getDefault();
 		IConsoleManager conMan = plugin.getConsoleManager();
 		IConsole[] existing = conMan.getConsoles();
@@ -507,9 +518,20 @@ public class SbtView extends ViewPart {
 		MessageConsole myConsole = new MessageConsole(name, null);
 		conMan.addConsoles(new IConsole[] { myConsole });
 		SbtPatternMatchListener sbtPatternMatchListener = new SbtPatternMatchListener(
-				project);
+				container);
 		myConsole.addPatternMatchListener(sbtPatternMatchListener);
 		return myConsole;
 	}
 
+	@Override
+	public void saveState(IMemento memento) {
+		super.saveState(memento);
+		StateMemory.rememberState(viewContentProvider, memento);
+	}
+
+	@Override
+	public void init(IViewSite site, IMemento memento) throws PartInitException {
+		super.init(site, memento);
+		StateMemory.remindState(viewContentProvider, memento);
+	}
 }

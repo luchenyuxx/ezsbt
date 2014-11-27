@@ -3,7 +3,7 @@ package com.density.sbtplugin.views;
 import org.eclipse.core.runtime.IAdaptable;
 
 public class TreeObject implements IAdaptable {
-	private String name;
+	protected String name;
 	private String sbtCommand;
 	private TreeParent parent;
 

@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Sbt-plugin
+Bundle-Name: %Bundle-Name
 Bundle-SymbolicName: sbt-plugin;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
@@ -10,3 +10,4 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.debug.ui;bundle-version="3.9.0",
  org.eclipse.jface.text;bundle-version="3.8.101"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: com.density.sbtplugin.views

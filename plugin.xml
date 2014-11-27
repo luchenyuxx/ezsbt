@@ -5,11 +5,11 @@
    <extension
          point="org.eclipse.ui.views">
       <category
-            name="Density"
+            name="%category.name"
             id="sbt-plugin">
       </category>
       <view
-            name="SBT View"
+            name="%view.name"
             icon="icons/sample.gif"
             category="sbt-plugin"
             class="com.density.sbtplugin.views.SbtView"

@@ -2,11 +2,13 @@ package com.density.sbtplugin.views;
 
 import java.util.ArrayList;
 
-import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 
 public class TreeParent extends TreeObject {
 	private ArrayList<TreeObject> children;
-	protected IProject project;
 
 	public boolean hasChild(String childName){
 		for(TreeObject child:children){
@@ -18,18 +20,12 @@ public class TreeParent extends TreeObject {
 		super(name);
 		children = new ArrayList<TreeObject>();
 	}
-	public TreeParent(String name, IProject project){
-		super(name);
-		children = new ArrayList<TreeObject>();
-		this.project = project;
+
+	public IContainer getContainer() {
+		IPath location = new Path(name);
+		return ResourcesPlugin.getWorkspace().getRoot().getContainerForLocation(location);
 	}
 
-	public IProject getProject() {
-		return project;
-	}
-	public void setProject(IProject project) {
-		this.project = project;
-	}
 	public void addChild(TreeObject child) {
 		children.add(child);
 		child.setParent(this);
