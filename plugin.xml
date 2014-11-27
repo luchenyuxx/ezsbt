@@ -10,7 +10,7 @@
       </category>
       <view
             name="%view.name"
-            icon="icons/sample.gif"
+            icon="icons/logoDt.png"
             category="sbt-plugin"
             class="com.density.sbtplugin.views.SbtView"
             id="com.density.sbtplugin.views.SbtView">

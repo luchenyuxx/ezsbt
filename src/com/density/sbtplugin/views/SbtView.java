@@ -583,6 +583,9 @@ public class SbtView extends ViewPart {
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		super.init(site, memento);
-		StateMemory.remindState(viewContentProvider, memento);
+		try{
+			StateMemory.remindState(viewContentProvider, memento);
+		}catch(Exception e){
+		}
 	}
 }
