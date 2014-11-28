@@ -1,7 +1,5 @@
 package com.density.sbtplugin.views;
 
-import com.density.sbtplugin.views.SbtView.ViewContentProvider;
-
 import org.eclipse.ui.IMemento;
 
 public class StateMemory {
@@ -11,7 +9,7 @@ public class StateMemory {
 	static public String COMMAND_NAME_KEY = "name";
 	static public String COMMAND_VALUE_KEY = "sbtcommand";
 
-	static public void rememberState(ViewContentProvider viewContentProvider,
+	static public void rememberState(SbtViewContentProvider viewContentProvider,
 			IMemento rootMem) {
 		TreeParent root = viewContentProvider.getInvisibleRoot();
 		for (TreeObject containerNode : root.getChildren()) {
@@ -28,7 +26,7 @@ public class StateMemory {
 		}
 	}
 
-	static public void remindState(ViewContentProvider viewContentProvider,
+	static public void remindState(SbtViewContentProvider viewContentProvider,
 			IMemento rootMem) {
 		TreeParent root = viewContentProvider.getInvisibleRoot();
 		for (IMemento containerMem : rootMem.getChildren()) {

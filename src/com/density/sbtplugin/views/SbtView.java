@@ -25,12 +25,9 @@ import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
@@ -78,7 +75,7 @@ public class SbtView extends ViewPart {
 
 	private TreeViewer viewer;
 	private DrillDownAdapter drillDownAdapter;
-	private ViewContentProvider viewContentProvider = new ViewContentProvider();
+	private SbtViewContentProvider viewContentProvider = new SbtViewContentProvider(this);
 	private Action removeAllAction;
 	private Action stopAllAction;
 	private Action removeProjectAction;
@@ -96,64 +93,6 @@ public class SbtView extends ViewPart {
 	 * or ignore it and always show the same content (like Task List, for
 	 * example).
 	 */
-
-	class ViewContentProvider implements IStructuredContentProvider,
-			ITreeContentProvider {
-		private TreeParent invisibleRoot;
-
-		public void inputChanged(Viewer v, Object oldInput, Object newInput) {
-		}
-
-		public void dispose() {
-		}
-
-		public Object[] getElements(Object parent) {
-			if (parent.equals(getViewSite())) {
-				if (invisibleRoot == null)
-					initialize();
-				return getChildren(invisibleRoot);
-			}
-			return getChildren(parent);
-		}
-
-		public Object getParent(Object child) {
-			if (child instanceof TreeObject) {
-				return ((TreeObject) child).getParent();
-			}
-			return null;
-		}
-
-		public Object[] getChildren(Object parent) {
-			if (parent instanceof TreeParent) {
-				return ((TreeParent) parent).getChildren();
-			}
-			return new Object[0];
-		}
-
-		public boolean hasChildren(Object parent) {
-			if (parent instanceof TreeParent)
-				return ((TreeParent) parent).hasChildren();
-			return false;
-		}
-
-		public TreeParent getInvisibleRoot() {
-			if (invisibleRoot == null)
-				initialize();
-			return invisibleRoot;
-		}
-
-		public void setInvisibleRoot(TreeParent invisibleRoot) {
-			this.invisibleRoot = invisibleRoot;
-		}
-
-		/*
-		 * We will set up a dummy model to initialize tree heararchy. In a real
-		 * code, you will connect to a real model and expose its hierarchy.
-		 */
-		private void initialize() {
-			invisibleRoot = new TreeParent("");
-		}
-	}
 
 	class ViewLabelProvider extends LabelProvider {
 
@@ -539,14 +478,14 @@ public class SbtView extends ViewPart {
 	}
 
 	protected void cleanView() {
-		ViewContentProvider contentProvider = (ViewContentProvider) viewer
+		SbtViewContentProvider contentProvider = (SbtViewContentProvider) viewer
 				.getContentProvider();
 		contentProvider.setInvisibleRoot(new TreeParent(""));
 		viewer.refresh();
 	}
 
 	protected void remove(TreeParent project) {
-		TreeParent root = ((ViewContentProvider) viewer.getContentProvider())
+		TreeParent root = ((SbtViewContentProvider) viewer.getContentProvider())
 				.getInvisibleRoot();
 		if (processWriterMap.keySet().contains(project.getName())) {
 			exitSbt(project.getName());

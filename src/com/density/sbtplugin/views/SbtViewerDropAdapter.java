@@ -8,8 +8,6 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerDropAdapter;
 import org.eclipse.swt.dnd.TransferData;
 
-import com.density.sbtplugin.views.SbtView.ViewContentProvider;
-
 public class SbtViewerDropAdapter extends ViewerDropAdapter {
 
 	public SbtViewerDropAdapter(Viewer viewer) {
@@ -20,26 +18,26 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 	public boolean performDrop(Object data) {
 		if (data.getClass().isAssignableFrom(TreeSelection.class)) {
 			TreeSelection treeSelection = (TreeSelection) data;
-			if (IContainer.class.isAssignableFrom(treeSelection
-					.getFirstElement().getClass())) {
-				return addNewSbtProject((IContainer)treeSelection.getFirstElement());
-			}else if(IJavaProject.class.isAssignableFrom(treeSelection.getFirstElement().getClass())){
-				IJavaProject javaProject = (IJavaProject)treeSelection.getFirstElement();
+			Object obj = treeSelection.getFirstElement();
+			if (IContainer.class.isAssignableFrom(obj.getClass())) {
+				return addNewSbtProject((IContainer) obj);
+			} else if (IJavaProject.class.isAssignableFrom(obj.getClass())) {
+				IJavaProject javaProject = (IJavaProject)obj;
 				return addNewSbtProject(javaProject.getProject());
 			}
 		}
 		return false;
 	}
-	
-	protected boolean addNewSbtProject(IContainer container){
-		ViewContentProvider contentProvider = (ViewContentProvider) ((TreeViewer) getViewer())
+
+	protected boolean addNewSbtProject(IContainer container) {
+		SbtViewContentProvider contentProvider = (SbtViewContentProvider) ((TreeViewer) getViewer())
 				.getContentProvider();
 		TreeParent root = contentProvider.getInvisibleRoot();
-		String path = container.getRawLocation().toString();
+		String path = container.getLocationURI().getRawPath();
 		if (!root.hasChild(path)) {
 			addNewSbtProject(path, root);
 			return true;
-		}else{
+		} else {
 			return false;
 		}
 	}
