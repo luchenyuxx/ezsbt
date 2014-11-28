@@ -501,7 +501,11 @@ public class SbtView extends ViewPart {
 
 	protected void exitSbt(String path) {
 		writeCommand(path, PluginConstants.EXIT_COMMAND);
-		closeProcess(path);
+		PrintWriter writer = processWriterMap.get(path);
+		if (writer != null) {
+			writer.close();
+			processWriterMap.remove(path);
+		} 
 	}
 
 	protected void sbtRun(String path) {
