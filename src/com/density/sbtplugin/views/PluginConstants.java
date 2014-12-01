@@ -10,4 +10,8 @@ public class PluginConstants {
 	final public static String EXIT_COMMAND = "exit";
 	final public static String RUN_NAME = "run";
 	final public static String RUN_COMMAND = "run";
+	final public static String RESTART_COMMAND = "restart";
+	final public static String RESTART_NAME = "restart sbt";
+	
+	final public static String BUNDLE_NAME = "sbt-plugin";
 }

@@ -42,9 +42,10 @@ public class TreeObject implements IAdaptable {
 	}
 
 	public String toString() {
-		return getName();
+		return name.substring(name.lastIndexOf("/")+1);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public Object getAdapter(Class key) {
 		return null;
 	}

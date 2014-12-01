@@ -55,7 +55,7 @@ public class SbtPatternMatchListener implements IPatternMatchListener {
 	protected void addFileLink(String line,int linkOffset, int linkLength) {
 		String[] splitedLine = line.split(":");
 		String filePath = splitedLine[0].trim();
-		String relativeFilePath = filePath.replace(container.getRawLocation().toString(), "");
+		String relativeFilePath = filePath.replace(container.getLocationURI().getRawPath(), "");
 		int fileLineNumber = Integer.parseInt(splitedLine[1].trim());
 		IPath location = new Path(relativeFilePath);
 		IFile file = container.getFile(location);

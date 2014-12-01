@@ -23,6 +23,10 @@ public class ConsolePrinter {
 		successStream = getSuccessStream(console);
 	}
 
+	public MessageConsole getConsole() {
+		return console;
+	}
+
 	protected MessageConsoleStream getErrorStream(MessageConsole console) {
 		MessageConsoleStream errorStream = console.newMessageStream();
 		errorStream.setColor(new Color(null, 150, 0, 0));

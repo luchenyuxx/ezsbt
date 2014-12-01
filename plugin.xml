@@ -38,8 +38,8 @@
          point="org.eclipse.ui.console.consolePatternMatchListeners">
       <consolePatternMatchListener
             class="com.density.sbtplugin.views.SbtPatternMatchListener"
-            id="sbt-plugin.consolePatternMatchListener"
-            regex=".*SbtPatternMatchListener.*">
+            id="sbt-plugin.sbtPatternMatchListener"
+            regex="sbt-plugin.sbtPatternMatchListener">
          <enablement></enablement>
       </consolePatternMatchListener>
    </extension>

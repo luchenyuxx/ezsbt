@@ -41,11 +41,14 @@ import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
+import org.eclipse.ui.console.IConsoleConstants;
 import org.eclipse.ui.console.IConsoleManager;
+import org.eclipse.ui.console.IConsoleView;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.part.DrillDownAdapter;
 import org.eclipse.ui.part.ViewPart;
@@ -75,7 +78,8 @@ public class SbtView extends ViewPart {
 
 	private TreeViewer viewer;
 	private DrillDownAdapter drillDownAdapter;
-	private SbtViewContentProvider viewContentProvider = new SbtViewContentProvider(this);
+	private SbtViewContentProvider viewContentProvider = new SbtViewContentProvider(
+			this);
 	private Action removeAllAction;
 	private Action stopAllAction;
 	private Action removeProjectAction;
@@ -339,6 +343,9 @@ public class SbtView extends ViewPart {
 			} else if (selectedNode.getSbtCommand().equals(
 					PluginConstants.EXIT_COMMAND)) {
 				exitSbt(path);
+			} else if (selectedNode.getSbtCommand().equals(
+					PluginConstants.RESTART_COMMAND)) {
+				restartSbt(path);
 			} else {
 				writeCommand(path, selectedNode.getSbtCommand());
 			}
@@ -379,12 +386,12 @@ public class SbtView extends ViewPart {
 				Process sbtProcess = processBuilder.start();
 				final InputStream inStream = sbtProcess.getInputStream();
 				final IContainer container = parent.getContainer();
-				final String consoleName = path
-						.substring(path.lastIndexOf("/") + 1);
+				final String consoleName = path;
 				new Thread(new Runnable() {
 					public void run() {
 						MessageConsole myConsole = findConsole(consoleName,
 								container);
+						// revealConsole(myConsole);
 						ConsolePrinter printer = new ConsolePrinter(myConsole);
 						printer.println("Starting...");
 						BufferedReader reader = new BufferedReader(
@@ -419,7 +426,7 @@ public class SbtView extends ViewPart {
 	}
 
 	protected String getSbtLaunchPath() {
-		Bundle bundle = Platform.getBundle("sbt-plugin");
+		Bundle bundle = Platform.getBundle(PluginConstants.BUNDLE_NAME);
 		URL url = bundle.getEntry("resources/sbt-launch.jar");
 		String result = null;
 		try {
@@ -444,11 +451,17 @@ public class SbtView extends ViewPart {
 		if (writer != null) {
 			writer.close();
 			processWriterMap.remove(path);
-		} 
+		}
 	}
 
 	protected void sbtRun(String path) {
 		writeCommand(path, PluginConstants.RUN_COMMAND);
+	}
+
+	protected void restartSbt(String path) {
+		exitSbt(path);
+		TreeParent treeParent = ((TreeObject) getSelectedObject()).getParent();
+		startSbt(treeParent);
 	}
 
 	protected void writeCommand(String path, String command) {
@@ -456,8 +469,12 @@ public class SbtView extends ViewPart {
 		if (writer != null) {
 			writer.println(command);
 			writer.flush();
+			revealConsole(findConsole(path, null));
 		} else {
-			showMessage("can't find sbt process on path " + path);
+			TreeParent treeParent = ((TreeObject) getSelectedObject())
+					.getParent();
+			startSbt(treeParent);
+			writeCommand(path, command);
 		}
 	}
 
@@ -473,7 +490,7 @@ public class SbtView extends ViewPart {
 
 	protected void closeAllProcess() {
 		for (String path : processWriterMap.keySet()) {
-			exitSbt(path);
+			closeProcess(path);
 		}
 	}
 
@@ -488,7 +505,7 @@ public class SbtView extends ViewPart {
 		TreeParent root = ((SbtViewContentProvider) viewer.getContentProvider())
 				.getInvisibleRoot();
 		if (processWriterMap.keySet().contains(project.getName())) {
-			exitSbt(project.getName());
+			closeProcess(project.getName());
 		}
 		root.removeChild(project);
 		viewer.refresh();
@@ -501,20 +518,31 @@ public class SbtView extends ViewPart {
 		viewer.getControl().setFocus();
 	}
 
-	private MessageConsole findConsole(String name, IContainer container) {
+	private synchronized MessageConsole findConsole(String name,
+			IContainer container) {
 		ConsolePlugin plugin = ConsolePlugin.getDefault();
 		IConsoleManager conMan = plugin.getConsoleManager();
 		IConsole[] existing = conMan.getConsoles();
 		for (int i = 0; i < existing.length; i++)
 			if (name.equals(existing[i].getName()))
 				return (MessageConsole) existing[i];
-		// no console found, so create a new one
 		MessageConsole myConsole = new MessageConsole(name, null);
 		conMan.addConsoles(new IConsole[] { myConsole });
 		SbtPatternMatchListener sbtPatternMatchListener = new SbtPatternMatchListener(
 				container);
 		myConsole.addPatternMatchListener(sbtPatternMatchListener);
 		return myConsole;
+	}
+
+	protected void revealConsole(IConsole console) {
+		try {
+			IWorkbenchPage page = getSite().getPage();
+			IConsoleView consoleView = (IConsoleView) page
+					.showView(IConsoleConstants.ID_CONSOLE_VIEW);
+			consoleView.display(console);
+		} catch (PartInitException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -526,9 +554,15 @@ public class SbtView extends ViewPart {
 	@Override
 	public void init(IViewSite site, IMemento memento) throws PartInitException {
 		super.init(site, memento);
-		try{
+		try {
 			StateMemory.remindState(viewContentProvider, memento);
-		}catch(Exception e){
+		} catch (Exception e) {
 		}
+	}
+
+	@Override
+	public void dispose() {
+		super.dispose();
+		closeAllProcess();
 	}
 }
