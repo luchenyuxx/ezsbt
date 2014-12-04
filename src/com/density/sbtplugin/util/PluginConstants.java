@@ -1,4 +1,4 @@
-package com.density.sbtplugin.views;
+package com.density.sbtplugin.util;
 
 
 public class PluginConstants {
@@ -19,4 +19,10 @@ public class PluginConstants {
 	//key and value in preference store
 	final public static String COMMANDS_NAME_KEY = "#commands";
 	final public static String[] DEFAULT_COMMANDS = {"clean->clean","compile->build","restart sbt->restart"};
+	
+	final public static int DELETE_KEY_CODE = 127;
+	
+	final public static String CONTROL_ID = "sbt-plugin.viewer";
+	
+	final public static String SBT_JAR_PATH = "resources/sbt-launch.jar";
 }

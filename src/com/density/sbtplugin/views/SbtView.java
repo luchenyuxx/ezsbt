@@ -34,6 +34,8 @@ import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.FileTransfer;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Menu;
@@ -53,6 +55,8 @@ import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.part.DrillDownAdapter;
 import org.eclipse.ui.part.ViewPart;
 import org.osgi.framework.Bundle;
+
+import com.density.sbtplugin.util.PluginConstants;
 
 /**
  * This sample class demonstrates how to plug-in a new workbench view. The view
@@ -75,6 +79,7 @@ public class SbtView extends ViewPart {
 	 * The ID of the view as specified by the extension.
 	 */
 	public static final String ID = "com.density.sbtplugin.views.SbtView";
+	private static final String MENU_TEXT = "#PopupMenu";
 
 	private TreeViewer viewer;
 	private DrillDownAdapter drillDownAdapter;
@@ -136,12 +141,37 @@ public class SbtView extends ViewPart {
 
 		// Create the help context id for the viewer's control
 		PlatformUI.getWorkbench().getHelpSystem()
-				.setHelp(viewer.getControl(), "sbt-plugin.viewer");
+				.setHelp(viewer.getControl(), PluginConstants.CONTROL_ID);
 		makeActions();
+		addKeyListener();
 		addDragAndDrop();
 		hookContextMenu();
 		hookDoubleClickAction();
 		contributeToActionBars();
+	}
+
+	protected void addKeyListener() {
+		viewer.getTree().addKeyListener(new KeyListener() {
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				if (e.keyCode == PluginConstants.DELETE_KEY_CODE) {
+					Object selectedObject = getSelectedObject();
+					if (selectedObject.getClass().equals(TreeParent.class)) {
+						remove((TreeParent) selectedObject);
+					} else if (selectedObject.getClass().equals(
+							TreeObject.class)) {
+						TreeObject treeObject = (TreeObject) selectedObject;
+						treeObject.getParent().removeChild(treeObject);
+						viewer.refresh();
+					}
+				}
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+			}
+		});
 	}
 
 	protected void addDragAndDrop() {
@@ -154,7 +184,7 @@ public class SbtView extends ViewPart {
 	}
 
 	private void hookContextMenu() {
-		MenuManager menuMgr = new MenuManager("#PopupMenu");
+		MenuManager menuMgr = new MenuManager(MENU_TEXT);
 		menuMgr.setRemoveAllWhenShown(true);
 		menuMgr.addMenuListener(new IMenuListener() {
 			public void menuAboutToShow(IMenuManager manager) {
@@ -338,9 +368,7 @@ public class SbtView extends ViewPart {
 			TreeObject selectedNode = (TreeObject) obj;
 			TreeParent parent = selectedNode.getParent();
 			String path = parent.getName();
-			if (selectedNode.getName().equals(PluginConstants.START_SBT_NAME)) {
-				startSbt(parent);
-			} else if (selectedNode.getSbtCommand().equals(
+			if (selectedNode.getSbtCommand().equals(
 					PluginConstants.EXIT_COMMAND)) {
 				exitSbt(path);
 			} else if (selectedNode.getSbtCommand().equals(
@@ -426,7 +454,7 @@ public class SbtView extends ViewPart {
 
 	protected String getSbtLaunchPath() {
 		Bundle bundle = Platform.getBundle(PluginConstants.BUNDLE_NAME);
-		URL url = bundle.getEntry("resources/sbt-launch.jar");
+		URL url = bundle.getEntry(PluginConstants.SBT_JAR_PATH);
 		String result = null;
 		try {
 			result = FileLocator.resolve(url).getPath();

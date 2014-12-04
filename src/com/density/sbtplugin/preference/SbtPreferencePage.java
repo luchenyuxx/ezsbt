@@ -22,8 +22,8 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.density.sbtplugin.util.CommandsConvertor;
+import com.density.sbtplugin.util.PluginConstants;
 import com.density.sbtplugin.util.SbtPlugin;
-import com.density.sbtplugin.views.PluginConstants;
 
 public class SbtPreferencePage extends PreferencePage implements
 		IWorkbenchPreferencePage {

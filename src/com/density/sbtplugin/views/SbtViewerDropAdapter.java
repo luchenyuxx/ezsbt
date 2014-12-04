@@ -10,6 +10,7 @@ import org.eclipse.jface.viewers.ViewerDropAdapter;
 import org.eclipse.swt.dnd.TransferData;
 
 import com.density.sbtplugin.util.CommandsConvertor;
+import com.density.sbtplugin.util.PluginConstants;
 import com.density.sbtplugin.util.SbtPlugin;
 
 public class SbtViewerDropAdapter extends ViewerDropAdapter {
