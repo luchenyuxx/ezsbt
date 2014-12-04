@@ -13,9 +13,11 @@ import org.eclipse.ui.console.TextConsole;
 public class SbtPatternMatchListener implements IPatternMatchListener {
 	private TextConsole console;
 	private IContainer container;
-	public SbtPatternMatchListener(IContainer container){
+
+	public SbtPatternMatchListener(IContainer container) {
 		this.container = container;
 	}
+
 	@Override
 	public void connect(TextConsole console) {
 		this.console = console;
@@ -32,7 +34,7 @@ public class SbtPatternMatchListener implements IPatternMatchListener {
 			int offset = event.getOffset();
 			int length = event.getLength();
 			String matchedString = console.getDocument().get(offset, length);
-			addFileLink(matchedString,offset,length);
+			addFileLink(matchedString, offset, length);
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
@@ -52,16 +54,19 @@ public class SbtPatternMatchListener implements IPatternMatchListener {
 	public String getLineQualifier() {
 		return ".*:[0-9]+:.*";
 	}
-	protected void addFileLink(String line,int linkOffset, int linkLength) {
+
+	protected void addFileLink(String line, int linkOffset, int linkLength) {
 		String[] splitedLine = line.split(":");
 		String filePath = splitedLine[0].trim();
-		String relativeFilePath = filePath.replace(container.getLocationURI().getRawPath(), "");
+		String relativeFilePath = filePath.replace(container.getLocationURI()
+				.getRawPath(), "");
 		int fileLineNumber = Integer.parseInt(splitedLine[1].trim());
 		IPath location = new Path(relativeFilePath);
 		IFile file = container.getFile(location);
 		FileLink fileLink = new FileLink(file, null, -1, -1, fileLineNumber);
 		try {
 			console.addHyperlink(fileLink, linkOffset, linkLength);
+			fileLink.linkActivated();
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}

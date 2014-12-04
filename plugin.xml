@@ -43,5 +43,13 @@
          <enablement></enablement>
       </consolePatternMatchListener>
    </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="com.density.sbtplugin.preference.SbtPreferencePage"
+            id="sbt-plugin.preferencePage"
+            name="SBT">
+      </page>
+   </extension>
 
 </plugin>

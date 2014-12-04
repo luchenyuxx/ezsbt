@@ -1,5 +1,6 @@
 package com.density.sbtplugin.views;
 
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
@@ -16,6 +17,8 @@ public class EditCommandDialog extends TitleAreaDialog {
 	private Text commandInput;
 	private TreeObject target;
 	private TreeViewer viewer;
+	private final static String MESSAGE = "The name field should not be empty. If so, press OK buttion will do nothing.";
+	private final static String TITLE = "Edit your command";
 
 	public EditCommandDialog(Shell parentShell, TreeObject target,
 			TreeViewer viewer) {
@@ -27,8 +30,8 @@ public class EditCommandDialog extends TitleAreaDialog {
 	@Override
 	public void create() {
 		super.create();
-		setTitle("Edit your command");
-		//setMessage("This is a TitleAreaDialog", IMessageProvider.INFORMATION);
+		setTitle(TITLE);
+		setMessage(MESSAGE, IMessageProvider.INFORMATION);
 	}
 
 	@Override
@@ -81,8 +84,10 @@ public class EditCommandDialog extends TitleAreaDialog {
 
 	@Override
 	protected void okPressed() {
-		saveInput();
-		viewer.refresh();
+		if (!nameInput.getText().isEmpty()) {
+			saveInput();
+			viewer.refresh();
+		}
 		super.okPressed();
 	}
 

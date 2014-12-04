@@ -1,5 +1,6 @@
 package com.density.sbtplugin.views;
 
+
 public class PluginConstants {
 	final public static String START_SBT_NAME = "start sbt";
 	final public static String COMPILE_NAME = "compile";
@@ -14,4 +15,8 @@ public class PluginConstants {
 	final public static String RESTART_NAME = "restart sbt";
 	
 	final public static String BUNDLE_NAME = "sbt-plugin";
+	
+	//key and value in preference store
+	final public static String COMMANDS_NAME_KEY = "#commands";
+	final public static String[] DEFAULT_COMMANDS = {"clean->clean","compile->build","restart sbt->restart"};
 }

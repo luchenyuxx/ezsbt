@@ -2,11 +2,15 @@ package com.density.sbtplugin.views;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerDropAdapter;
 import org.eclipse.swt.dnd.TransferData;
+
+import com.density.sbtplugin.util.CommandsConvertor;
+import com.density.sbtplugin.util.SbtPlugin;
 
 public class SbtViewerDropAdapter extends ViewerDropAdapter {
 
@@ -22,7 +26,7 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 			if (IContainer.class.isAssignableFrom(obj.getClass())) {
 				return addNewSbtProject((IContainer) obj);
 			} else if (IJavaProject.class.isAssignableFrom(obj.getClass())) {
-				IJavaProject javaProject = (IJavaProject)obj;
+				IJavaProject javaProject = (IJavaProject) obj;
 				return addNewSbtProject(javaProject.getProject());
 			}
 		}
@@ -44,11 +48,15 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 
 	protected void addNewSbtProject(String path, TreeParent root) {
 		TreeParent newSbtProject = new TreeParent(path);
-		newSbtProject.addChild(new TreeObject(PluginConstants.RESTART_NAME,PluginConstants.RESTART_COMMAND));
-		newSbtProject.addChild(new TreeObject(PluginConstants.COMPILE_NAME,
-				PluginConstants.COMPILE_COMMAND));
-		newSbtProject.addChild(new TreeObject(PluginConstants.CLEAN_NAME,
-				PluginConstants.CLEAN_COMMAND));
+		IPreferenceStore store = SbtPlugin.getInstance().getPreferenceStore();
+		String[] commandPairs = CommandsConvertor.stringToArray(store
+				.getString(PluginConstants.COMMANDS_NAME_KEY));
+		for (String commandPair : commandPairs) {
+			TreeObject commandObject = new TreeObject(
+					CommandsConvertor.keyOf(commandPair),
+					CommandsConvertor.valueOf(commandPair));
+			newSbtProject.addChild(commandObject);
+		}
 		root.addChild(newSbtProject);
 		getViewer().refresh();
 	}
@@ -57,6 +65,10 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 	public boolean validateDrop(Object target, int operation,
 			TransferData transferType) {
 		return true;
+	}
+
+	public void defaultCommands() {
+		SbtPlugin.getInstance().getPreferenceStore();
 	}
 
 }

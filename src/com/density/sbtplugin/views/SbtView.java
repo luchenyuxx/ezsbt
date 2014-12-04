@@ -391,7 +391,6 @@ public class SbtView extends ViewPart {
 					public void run() {
 						MessageConsole myConsole = findConsole(consoleName,
 								container);
-						// revealConsole(myConsole);
 						ConsolePrinter printer = new ConsolePrinter(myConsole);
 						printer.println("Starting...");
 						BufferedReader reader = new BufferedReader(

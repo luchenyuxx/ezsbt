@@ -1,8 +1,7 @@
-package com.density.sbtplugin.views;
+package com.density.sbtplugin.preference;
 
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
-import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -10,27 +9,25 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 
-public class AddCommandDialog extends TitleAreaDialog {
+public class EditCommandDialog extends TitleAreaDialog {
 	private Text nameInput;
 	private Text commandInput;
-	private TreeParent target;
-	private TreeViewer viewer;
+	private TableItem commandItem;
 	private final static String MESSAGE = "The name field should not be empty. If so, press OK buttion will do nothing.";
-	private final static String TITLE = "Add a command to ";
+	private final static String TITLE = "Edit your command";
 
-	public AddCommandDialog(Shell parentShell, TreeParent target,
-			TreeViewer viewer) {
+	public EditCommandDialog(Shell parentShell, TableItem commandItem) {
 		super(parentShell);
-		this.target = target;
-		this.viewer = viewer;
+		this.commandItem = commandItem;
 	}
 
 	@Override
 	public void create() {
 		super.create();
-		setTitle(TITLE + target.getName());
+		setTitle(TITLE);
 		setMessage(MESSAGE, IMessageProvider.INFORMATION);
 	}
 
@@ -56,6 +53,7 @@ public class AddCommandDialog extends TitleAreaDialog {
 		nameData.horizontalAlignment = GridData.FILL;
 
 		nameInput = new Text(container, SWT.BORDER);
+		nameInput.setText(commandItem.getText(0));
 		nameInput.setLayoutData(nameData);
 	}
 
@@ -67,6 +65,7 @@ public class AddCommandDialog extends TitleAreaDialog {
 		commandData.grabExcessHorizontalSpace = true;
 		commandData.horizontalAlignment = GridData.FILL;
 		commandInput = new Text(container, SWT.BORDER);
+		commandInput.setText(commandItem.getText(1));
 		commandInput.setLayoutData(commandData);
 	}
 
@@ -75,17 +74,13 @@ public class AddCommandDialog extends TitleAreaDialog {
 		return true;
 	}
 
-	protected TreeObject saveInput() {
-		return new TreeObject(nameInput.getText(), commandInput.getText());
-	}
-
 	@Override
 	protected void okPressed() {
 		if (!nameInput.getText().isEmpty()) {
-			TreeObject newCommand = saveInput();
-			target.addChild(newCommand);
-			viewer.refresh();
+			commandItem.setText(new String[] { nameInput.getText(),
+					commandInput.getText() });
 		}
 		super.okPressed();
 	}
+
 }
