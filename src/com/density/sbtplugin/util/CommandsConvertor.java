@@ -12,19 +12,19 @@ public class CommandsConvertor {
 		return Arrays.toString(commandPairs);
 	}
 	static public String keyOf(String commandPair){
-		return commandPair.split("->")[0];
+		return commandPair.split(PluginConstants.COMMANDS_SPLITOR)[0];
 	}
 	static public String valueOf(String commandPair){
-		return commandPair.split("->")[1];
+		return commandPair.split(PluginConstants.COMMANDS_SPLITOR)[1];
 	}
 	static public String addCommandPair(String commandPairs,String commandName,String command){
 		if(commandPairs.equals("")){
-			return "["+commandName+"->"+command+"]";
+			return "["+commandName+PluginConstants.COMMANDS_SPLITOR+command+"]";
 		}
 		String adjustCommandPairs = commandPairs.replaceAll("\\]", "");
-		return adjustCommandPairs+ ", "+commandName+"->"+command+"]";
+		return adjustCommandPairs+ ", "+commandName+PluginConstants.COMMANDS_SPLITOR+command+"]";
 	}
 	static public String[] pairToArray(String commandPair){
-		return commandPair.split("->");
+		return commandPair.split(PluginConstants.COMMANDS_SPLITOR);
 	}
 }

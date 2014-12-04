@@ -9,7 +9,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.FileLocator;
@@ -516,7 +518,8 @@ public class SbtView extends ViewPart {
 	}
 
 	protected void closeAllProcess() {
-		for (String path : processWriterMap.keySet()) {
+		Set<String> allProcessPath = new HashSet<String>(processWriterMap.keySet());
+		for(String path: allProcessPath){
 			closeProcess(path);
 		}
 	}

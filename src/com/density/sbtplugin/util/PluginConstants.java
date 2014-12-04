@@ -17,6 +17,7 @@ public class PluginConstants {
 	final public static String BUNDLE_NAME = "sbt-plugin";
 	
 	//key and value in preference store
+	final public static String COMMANDS_SPLITOR = "->";
 	final public static String COMMANDS_NAME_KEY = "#commands";
 	final public static String[] DEFAULT_COMMANDS = {"clean->clean","compile->build","restart sbt->restart"};
 	

@@ -13,6 +13,9 @@ import org.eclipse.ui.console.TextConsole;
 public class SbtPatternMatchListener implements IPatternMatchListener {
 	private TextConsole console;
 	private IContainer container;
+	private final static String PATTERN = "\\S+\\w+\\.(java|scala):[0-9]+";
+	private final static String LINE_QUALIFIER = ".*:[0-9]+:.*";
+	private final static String SPLIT_SEPARATOR = ":";
 
 	public SbtPatternMatchListener(IContainer container) {
 		this.container = container;
@@ -42,7 +45,7 @@ public class SbtPatternMatchListener implements IPatternMatchListener {
 
 	@Override
 	public String getPattern() {
-		return "\\S+\\w+\\.(java|scala):[0-9]+";
+		return PATTERN;
 	}
 
 	@Override
@@ -52,11 +55,11 @@ public class SbtPatternMatchListener implements IPatternMatchListener {
 
 	@Override
 	public String getLineQualifier() {
-		return ".*:[0-9]+:.*";
+		return LINE_QUALIFIER;
 	}
 
 	protected void addFileLink(String line, int linkOffset, int linkLength) {
-		String[] splitedLine = line.split(":");
+		String[] splitedLine = line.split(SPLIT_SEPARATOR);
 		String filePath = splitedLine[0].trim();
 		String relativeFilePath = filePath.replace(container.getLocationURI()
 				.getRawPath(), "");

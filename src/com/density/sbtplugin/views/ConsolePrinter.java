@@ -10,6 +10,10 @@ public class ConsolePrinter {
 	private MessageConsoleStream infoStream;
 	private MessageConsoleStream warningStream;
 	private MessageConsoleStream successStream;
+	private static final String ERROR_PATTERN = "[error]";
+	private static final String INFO_PATTERN = "[info]";
+	private static final String SUCCESS_PATTERN = "[success]";
+	private static final String WARN_PATTERN = "[warn]";
 
 	public ConsolePrinter(MessageConsole console) {
 		this.console = console;
@@ -67,7 +71,7 @@ public class ConsolePrinter {
 
 	protected void printInfoLine(String line) {
 		infoStream.print("[info]");
-		String newLine = line.substring("[info]".length());
+		String newLine = line.substring(INFO_PATTERN.length());
 		infoStream.println(newLine);
 	}
 
@@ -75,7 +79,7 @@ public class ConsolePrinter {
 		infoStream.print("[");
 		errorStream.print("error");
 		infoStream.print("]");
-		String newLine = line.substring("[error]".length());
+		String newLine = line.substring(ERROR_PATTERN.length());
 		errorStream.println(newLine);
 	}
 
@@ -83,7 +87,7 @@ public class ConsolePrinter {
 		infoStream.print("[");
 		successStream.print("success");
 		infoStream.print("]");
-		String newLine = line.substring("[success]".length());
+		String newLine = line.substring(SUCCESS_PATTERN.length());
 		infoStream.println(newLine);
 	}
 
@@ -91,24 +95,24 @@ public class ConsolePrinter {
 		infoStream.print("[");
 		warningStream.print("warn");
 		infoStream.print("]");
-		String newLine = line.substring("[warn]".length());
+		String newLine = line.substring(WARN_PATTERN.length());
 		infoStream.println(newLine);
 	}
 
 	protected boolean isErrorLine(String line) {
-		return line.startsWith("[error]");
+		return line.startsWith(ERROR_PATTERN);
 	}
 
 	protected boolean isInfoLine(String line) {
-		return line.startsWith("[info]");
+		return line.startsWith(INFO_PATTERN);
 	}
 
 	protected boolean isSuccessLine(String line) {
-		return line.startsWith("[success]");
+		return line.startsWith(SUCCESS_PATTERN);
 	}
 
 	protected boolean isWarningLine(String line) {
-		return line.startsWith("[warn]");
+		return line.startsWith(WARN_PATTERN);
 	}
 
 }
