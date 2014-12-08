@@ -1,16 +1,17 @@
 package com.density.sbtplugin.preference;
 
+import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferencePage;
+import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -31,6 +32,7 @@ public class SbtPreferencePage extends PreferencePage implements
 	protected Button addButton;
 	protected Button editButton;
 	protected Button removeButton;
+	protected static final String[] TABLE_COLUMNS_TITLE = { "name", "command" };
 
 	@Override
 	public void init(IWorkbench workbench) {
@@ -49,15 +51,16 @@ public class SbtPreferencePage extends PreferencePage implements
 	protected Composite makeRootComposite(Composite parent) {
 		Composite rootComposite = new Composite(parent, SWT.EMBEDDED
 				| SWT.HORIZONTAL);
-		GridLayout gridLayout = new GridLayout(2, false);
-		rootComposite.setLayout(gridLayout);
-		rootComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
+		rootComposite.setLayout(new RowLayout());
 		return rootComposite;
 	}
 
 	protected Composite makeButtonComposite(Composite parent) {
 		Composite buttonComposite = new Composite(parent, SWT.NONE);
-		buttonComposite.setLayout(new FillLayout(SWT.VERTICAL));
+		buttonComposite.setLayoutData(new RowData(100, 300));
+		RowLayout rowLayout = new RowLayout(SWT.VERTICAL);
+		rowLayout.fill = true;
+		buttonComposite.setLayout(rowLayout);
 		addButton = new Button(buttonComposite, SWT.NONE);
 		addButton.setText("Add");
 		addButton.addSelectionListener(new SelectionAdapter() {
@@ -91,16 +94,18 @@ public class SbtPreferencePage extends PreferencePage implements
 	}
 
 	protected void makeTable(Composite parent) {
-		TableViewer tableViewer = new TableViewer(parent, SWT.V_SCROLL|SWT.H_SCROLL|SWT.BORDER|SWT.FULL_SELECTION);
+		Composite tableComposite = new Composite(parent, SWT.NONE);
+		tableComposite.setLayoutData(new RowData(300, 300));
+		TableColumnLayout tableColumnLayout = new TableColumnLayout();
+		tableComposite.setLayout(tableColumnLayout);
+		TableViewer tableViewer = new TableViewer(tableComposite, SWT.SINGLE|SWT.V_SCROLL|SWT.H_SCROLL|SWT.BORDER|SWT.FULL_SELECTION);
 		commandTable = tableViewer.getTable();
-		commandTable.setLayoutData(new GridData(GridData.FILL_BOTH));
 		commandTable.setLinesVisible(true);
 		commandTable.setHeaderVisible(true);
-		String[] titles = { "name", "command" };
-		for (int i = 0; i < titles.length; i++) {
-			TableColumn column = new TableColumn(commandTable, SWT.NONE);
-			column.setText(titles[i]);
-			column.setWidth(100);
+		for (String title: TABLE_COLUMNS_TITLE) {
+			TableColumn column = new TableColumn(commandTable, SWT.CENTER);
+			column.setText(title);
+			tableColumnLayout.setColumnData(column, new ColumnWeightData(50, 150, false));
 		}
 		IPreferenceStore store = getPreferenceStore();
 		String[] commandPairs = CommandsConvertor.stringToArray(store
