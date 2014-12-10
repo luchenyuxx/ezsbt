@@ -38,13 +38,20 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 		SbtViewContentProvider contentProvider = (SbtViewContentProvider) ((TreeViewer) getViewer())
 				.getContentProvider();
 		TreeParent root = contentProvider.getInvisibleRoot();
-		String path = container.getLocationURI().getRawPath();
+		String path = getPath(container);
 		if (!root.hasChild(path)) {
 			addNewSbtProject(path, root);
 			return true;
 		} else {
 			return false;
 		}
+	}
+	protected String getPath(IContainer container){
+		String path = container.getLocationURI().getRawPath();
+		if(System.getProperty("os.name").toLowerCase().contains("win")){
+			return path.substring(1);
+		}
+		return path;
 	}
 
 	protected void addNewSbtProject(String path, TreeParent root) {

@@ -407,11 +407,8 @@ public class SbtView extends ViewPart {
 			showMessage("sbt for " + path + " is running");
 		} else {
 			try {
-				ProcessBuilder processBuilder = new ProcessBuilder("java",
-						"-Xms1024m", "-Xmx1024m",
-						"-XX:ReservedCodeCacheSize=128m",
-						"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m",
-						"-jar", getSbtLaunchPath()).directory(new File(path));
+				ProcessBuilder processBuilder = new ProcessBuilder(getLaunchCommand())
+						.directory(new File(path));
 				processBuilder.environment().put("JAVA_HOME", getJavaHome());
 				Process sbtProcess = processBuilder.start();
 				final InputStream inStream = sbtProcess.getInputStream();
@@ -432,12 +429,26 @@ public class SbtView extends ViewPart {
 					}
 				}).start();
 				OutputStream outStream = sbtProcess.getOutputStream();
-				PrintWriter pWriter = new PrintWriter(outStream);
+				PrintWriter pWriter = new PrintWriter(outStream, true);
 				processWriterMap.put(path, pWriter);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	protected String[] getLaunchCommand() {
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			return new String[] { "java", "-Xmx512m",
+					"-Djline.terminal=jline.UnsupportedTerminal",
+					"-XX:ReservedCodeCacheSize=128m",
+					"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m", "-cp",
+					getSbtLaunchPath(), "xsbt.boot.Boot" };
+		} else
+			return new String[] { "java", "-Xmx512m",
+					"-XX:ReservedCodeCacheSize=128m",
+					"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m", "-jar",
+					getSbtLaunchPath() };
 	}
 
 	protected void printConsoleLine(String line) {
@@ -446,10 +457,9 @@ public class SbtView extends ViewPart {
 
 	protected String getJavaHome() {
 		String java_home = null;
-		if (System.getProperty("os.name").toLowerCase().contains("win"))
-			java_home = new File(System.getProperty("java.home"))
-					.getParentFile().getAbsolutePath();
-		else
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			java_home = System.getenv("JAVA_HOME");
+		} else
 			java_home = System.getProperty("java.home");
 		return java_home;
 	}
@@ -460,6 +470,9 @@ public class SbtView extends ViewPart {
 		String result = null;
 		try {
 			result = FileLocator.resolve(url).getPath();
+			if (System.getProperty("os.name").toLowerCase().contains("win")) {
+				result = result.substring(1);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -497,7 +510,6 @@ public class SbtView extends ViewPart {
 		PrintWriter writer = processWriterMap.get(path);
 		if (writer != null) {
 			writer.println(command);
-			writer.flush();
 			revealConsole(findConsole(path, null));
 		} else {
 			TreeParent treeParent = ((TreeObject) getSelectedObject())
@@ -518,8 +530,9 @@ public class SbtView extends ViewPart {
 	}
 
 	protected void closeAllProcess() {
-		Set<String> allProcessPath = new HashSet<String>(processWriterMap.keySet());
-		for(String path: allProcessPath){
+		Set<String> allProcessPath = new HashSet<String>(
+				processWriterMap.keySet());
+		for (String path : allProcessPath) {
 			closeProcess(path);
 		}
 	}

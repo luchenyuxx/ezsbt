@@ -59,13 +59,11 @@ public class SbtPatternMatchListener implements IPatternMatchListener {
 	}
 
 	protected void addFileLink(String line, int linkOffset, int linkLength) {
-		String[] splitedLine = line.split(SPLIT_SEPARATOR);
-		String filePath = splitedLine[0].trim();
-		String relativeFilePath = filePath.replace(container.getLocationURI()
-				.getRawPath(), "");
-		int fileLineNumber = Integer.parseInt(splitedLine[1].trim());
-		IPath location = new Path(relativeFilePath);
-		IFile file = container.getFile(location);
+		String filePath = line.substring(0, line.lastIndexOf(SPLIT_SEPARATOR));
+		int fileLineNumber = Integer.parseInt(line.substring(line.lastIndexOf(SPLIT_SEPARATOR)+1));
+		IPath location = new Path(filePath);
+		IPath relativeLocation = location.makeRelativeTo(container.getLocation());
+		IFile file = container.getFile(relativeLocation);
 		FileLink fileLink = new FileLink(file, null, -1, -1, fileLineNumber);
 		try {
 			console.addHyperlink(fileLink, linkOffset, linkLength);
