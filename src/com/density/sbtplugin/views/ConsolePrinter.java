@@ -1,5 +1,7 @@
 package com.density.sbtplugin.views;
 
+import java.io.IOException;
+
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
@@ -114,5 +116,10 @@ public class ConsolePrinter {
 	protected boolean isWarningLine(String line) {
 		return line.startsWith(WARN_PATTERN);
 	}
-
+	public void dispose() throws IOException{
+		errorStream.close();
+		infoStream.close();
+		successStream.close();
+		warningStream.close();
+	}
 }

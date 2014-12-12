@@ -369,15 +369,14 @@ public class SbtView extends ViewPart {
 		if (obj.getClass().equals(TreeObject.class)) {
 			TreeObject selectedNode = (TreeObject) obj;
 			TreeParent parent = selectedNode.getParent();
-			String path = parent.getName();
 			if (selectedNode.getSbtCommand().equals(
 					PluginConstants.EXIT_COMMAND)) {
-				exitSbt(path);
+				exitSbt(parent);
 			} else if (selectedNode.getSbtCommand().equals(
 					PluginConstants.RESTART_COMMAND)) {
-				restartSbt(path);
+				restartSbt(parent);
 			} else {
-				writeCommand(path, selectedNode.getSbtCommand());
+				writeCommand(parent, selectedNode.getSbtCommand());
 			}
 		}
 	}
@@ -418,7 +417,7 @@ public class SbtView extends ViewPart {
 					public void run() {
 						MessageConsole myConsole = findConsole(consoleName,
 								container);
-						ConsolePrinter printer = new ConsolePrinter(myConsole);
+						ConsolePrinter printer = ConsolePrinterManager.getPrinter(myConsole);
 						printer.println("Starting...");
 						BufferedReader reader = new BufferedReader(
 								new InputStreamReader(inStream));
@@ -495,6 +494,9 @@ public class SbtView extends ViewPart {
 			processWriterMap.remove(path);
 		}
 	}
+	protected void exitSbt(TreeParent node){
+		SbtWorkerManager.getSbtWorker(node, this).stopSbt();
+	}
 
 	protected void sbtRun(String path) {
 		writeCommand(path, PluginConstants.RUN_COMMAND);
@@ -504,6 +506,9 @@ public class SbtView extends ViewPart {
 		exitSbt(path);
 		TreeParent treeParent = ((TreeObject) getSelectedObject()).getParent();
 		startSbt(treeParent);
+	}
+	protected void restartSbt(TreeParent node){
+		SbtWorkerManager.getSbtWorker(node, this).restartSbt();
 	}
 
 	protected void writeCommand(String path, String command) {
@@ -517,6 +522,9 @@ public class SbtView extends ViewPart {
 			startSbt(treeParent);
 			writeCommand(path, command);
 		}
+	}
+	protected void writeCommand(TreeParent node, String command){
+		SbtWorkerManager.getSbtWorker(node, this).write(command);;
 	}
 
 	protected void closeProcess(String path) {
