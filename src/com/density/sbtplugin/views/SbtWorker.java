@@ -61,13 +61,16 @@ public class SbtWorker {
 		}
 	}
 
+	// if running, close, if not, do nothing
 	public void stopSbt() {
-		processWriter.close();
-		sbtProcess = null;
-		printThread = null;
-		processWriter = null;
-		scanner = null;
-		running = false;
+		if (running) {
+			processWriter.close();
+			sbtProcess = null;
+			printThread = null;
+			processWriter = null;
+			scanner = null;
+			running = false;
+		}
 	}
 
 	public void restartSbt() {
@@ -86,12 +89,13 @@ public class SbtWorker {
 			write(input);
 		}
 	}
-	protected void startPrintThread(){
+
+	protected void startPrintThread() {
 		printThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				Thread thisThread = Thread.currentThread();
-				while (scanner.hasNextLine() && thisThread==printThread) {
+				while (scanner.hasNextLine() && thisThread == printThread) {
 					consolePrinter.println(scanner.nextLine());
 				}
 			}
@@ -172,5 +176,9 @@ public class SbtWorker {
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public boolean isWorking() {
+		return running;
 	}
 }

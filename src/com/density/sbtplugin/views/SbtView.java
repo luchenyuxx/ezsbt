@@ -1,21 +1,5 @@
 package com.density.sbtplugin.views;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
-
-import org.eclipse.core.resources.IContainer;
-import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -45,18 +29,10 @@ import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IViewSite;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.console.ConsolePlugin;
-import org.eclipse.ui.console.IConsole;
-import org.eclipse.ui.console.IConsoleConstants;
-import org.eclipse.ui.console.IConsoleManager;
-import org.eclipse.ui.console.IConsoleView;
-import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.part.DrillDownAdapter;
 import org.eclipse.ui.part.ViewPart;
-import org.osgi.framework.Bundle;
 
 import com.density.sbtplugin.util.PluginConstants;
 
@@ -94,8 +70,6 @@ public class SbtView extends ViewPart {
 	private Action editCommandAction;
 	private Action addCommandAction;
 	private Action removeCommandAction;
-
-	private HashMap<String, PrintWriter> processWriterMap = new HashMap<String, PrintWriter>();
 
 	/*
 	 * The content provider class is responsible for providing objects to the
@@ -286,7 +260,7 @@ public class SbtView extends ViewPart {
 	protected void makeRemoveAllAction() {
 		removeAllAction = new Action() {
 			public void run() {
-				closeAllProcess();
+				closeAllSbt();
 				cleanView();
 			}
 		};
@@ -301,7 +275,7 @@ public class SbtView extends ViewPart {
 	protected void makeStopAllAction() {
 		stopAllAction = new Action() {
 			public void run() {
-				closeAllProcess();
+				closeAllSbt();
 			}
 		};
 		stopAllAction.setText("Stop all");
@@ -395,154 +369,30 @@ public class SbtView extends ViewPart {
 		});
 	}
 
-	private void showMessage(String message) {
+	protected void showMessage(String message) {
 		MessageDialog.openInformation(viewer.getControl().getShell(),
 				"Sbt View", message);
 	}
 
-	protected void startSbt(TreeParent parent) {
-		String path = parent.getName();
-		if (processWriterMap.keySet().contains(path)) {
-			showMessage("sbt for " + path + " is running");
-		} else {
-			try {
-				ProcessBuilder processBuilder = new ProcessBuilder(getLaunchCommand())
-						.directory(new File(path));
-				processBuilder.environment().put("JAVA_HOME", getJavaHome());
-				Process sbtProcess = processBuilder.start();
-				final InputStream inStream = sbtProcess.getInputStream();
-				final IContainer container = parent.getContainer();
-				final String consoleName = path;
-				new Thread(new Runnable() {
-					public void run() {
-						MessageConsole myConsole = findConsole(consoleName,
-								container);
-						ConsolePrinter printer = ConsolePrinterManager.getPrinter(myConsole);
-						printer.println("Starting...");
-						BufferedReader reader = new BufferedReader(
-								new InputStreamReader(inStream));
-						Scanner scan = new Scanner(reader);
-						while (scan.hasNextLine()) {
-							printer.println(scan.nextLine());
-						}
-					}
-				}).start();
-				OutputStream outStream = sbtProcess.getOutputStream();
-				PrintWriter pWriter = new PrintWriter(outStream, true);
-				processWriterMap.put(path, pWriter);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	protected String[] getLaunchCommand() {
-		if (System.getProperty("os.name").toLowerCase().contains("win")) {
-			return new String[] { "java", "-Xmx512m",
-					"-Djline.terminal=jline.UnsupportedTerminal",
-					"-XX:ReservedCodeCacheSize=128m",
-					"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m", "-cp",
-					getSbtLaunchPath(), "xsbt.boot.Boot" };
-		} else
-			return new String[] { "java", "-Xmx512m",
-					"-XX:ReservedCodeCacheSize=128m",
-					"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m", "-jar",
-					getSbtLaunchPath() };
-	}
-
-	protected void printConsoleLine(String line) {
-
-	}
-
-	protected String getJavaHome() {
-		String java_home = null;
-		if (System.getProperty("os.name").toLowerCase().contains("win")) {
-			java_home = System.getenv("JAVA_HOME");
-		} else
-			java_home = System.getProperty("java.home");
-		return java_home;
-	}
-
-	protected String getSbtLaunchPath() {
-		Bundle bundle = Platform.getBundle(PluginConstants.BUNDLE_NAME);
-		URL url = bundle.getEntry(PluginConstants.SBT_JAR_PATH);
-		String result = null;
-		try {
-			result = FileLocator.resolve(url).getPath();
-			if (System.getProperty("os.name").toLowerCase().contains("win")) {
-				result = result.substring(1);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
-
-	protected void sbtCompile(String path) {
-		writeCommand(path, PluginConstants.COMPILE_COMMAND);
-	}
-
-	protected void sbtClean(String path) {
-		writeCommand(path, PluginConstants.CLEAN_COMMAND);
-	}
-
-	protected void exitSbt(String path) {
-		writeCommand(path, PluginConstants.EXIT_COMMAND);
-		PrintWriter writer = processWriterMap.get(path);
-		if (writer != null) {
-			writer.close();
-			processWriterMap.remove(path);
-		}
-	}
-	protected void exitSbt(TreeParent node){
+	protected void exitSbt(TreeParent node) {
 		SbtWorkerManager.getSbtWorker(node, this).stopSbt();
 	}
 
-	protected void sbtRun(String path) {
-		writeCommand(path, PluginConstants.RUN_COMMAND);
-	}
-
-	protected void restartSbt(String path) {
-		exitSbt(path);
-		TreeParent treeParent = ((TreeObject) getSelectedObject()).getParent();
-		startSbt(treeParent);
-	}
-	protected void restartSbt(TreeParent node){
+	protected void restartSbt(TreeParent node) {
 		SbtWorkerManager.getSbtWorker(node, this).restartSbt();
 	}
 
-	protected void writeCommand(String path, String command) {
-		PrintWriter writer = processWriterMap.get(path);
-		if (writer != null) {
-			writer.println(command);
-			revealConsole(findConsole(path, null));
-		} else {
-			TreeParent treeParent = ((TreeObject) getSelectedObject())
-					.getParent();
-			startSbt(treeParent);
-			writeCommand(path, command);
-		}
-	}
-	protected void writeCommand(TreeParent node, String command){
-		SbtWorkerManager.getSbtWorker(node, this).write(command);;
+	protected void writeCommand(TreeParent node, String command) {
+		SbtWorkerManager.getSbtWorker(node, this).write(command);
+		;
 	}
 
-	protected void closeProcess(String path) {
-		PrintWriter writer = processWriterMap.get(path);
-		if (writer != null) {
-			writer.close();
-			processWriterMap.remove(path);
-		} else {
-			showMessage("can't find sbt process on path " + path);
-		}
+	protected void closeAllSbt() {
+		SbtWorkerManager.closeAllSbtWorker();
 	}
 
-	protected void closeAllProcess() {
-		Set<String> allProcessPath = new HashSet<String>(
-				processWriterMap.keySet());
-		for (String path : allProcessPath) {
-			closeProcess(path);
-		}
+	protected void closeSbt(TreeParent project) {
+		SbtWorkerManager.closeSbtWorker(project);
 	}
 
 	protected void cleanView() {
@@ -555,9 +405,7 @@ public class SbtView extends ViewPart {
 	protected void remove(TreeParent project) {
 		TreeParent root = ((SbtViewContentProvider) viewer.getContentProvider())
 				.getInvisibleRoot();
-		if (processWriterMap.keySet().contains(project.getName())) {
-			closeProcess(project.getName());
-		}
+		closeSbt(project);
 		root.removeChild(project);
 		viewer.refresh();
 	}
@@ -567,33 +415,6 @@ public class SbtView extends ViewPart {
 	 */
 	public void setFocus() {
 		viewer.getControl().setFocus();
-	}
-
-	private synchronized MessageConsole findConsole(String name,
-			IContainer container) {
-		ConsolePlugin plugin = ConsolePlugin.getDefault();
-		IConsoleManager conMan = plugin.getConsoleManager();
-		IConsole[] existing = conMan.getConsoles();
-		for (int i = 0; i < existing.length; i++)
-			if (name.equals(existing[i].getName()))
-				return (MessageConsole) existing[i];
-		MessageConsole myConsole = new MessageConsole(name, null);
-		conMan.addConsoles(new IConsole[] { myConsole });
-		SbtPatternMatchListener sbtPatternMatchListener = new SbtPatternMatchListener(
-				container);
-		myConsole.addPatternMatchListener(sbtPatternMatchListener);
-		return myConsole;
-	}
-
-	protected void revealConsole(IConsole console) {
-		try {
-			IWorkbenchPage page = getSite().getPage();
-			IConsoleView consoleView = (IConsoleView) page
-					.showView(IConsoleConstants.ID_CONSOLE_VIEW);
-			consoleView.display(console);
-		} catch (PartInitException e) {
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -614,6 +435,6 @@ public class SbtView extends ViewPart {
 	@Override
 	public void dispose() {
 		super.dispose();
-		closeAllProcess();
+		closeAllSbt();
 	}
 }
