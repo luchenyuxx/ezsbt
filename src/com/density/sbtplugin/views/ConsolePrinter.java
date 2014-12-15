@@ -1,7 +1,5 @@
 package com.density.sbtplugin.views;
 
-import java.io.IOException;
-
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
@@ -16,6 +14,10 @@ public class ConsolePrinter {
 	private static final String INFO_PATTERN = "[info]";
 	private static final String SUCCESS_PATTERN = "[success]";
 	private static final String WARN_PATTERN = "[warn]";
+	private static final String SPECIAL_LINE_PATTERN = "(r)etry, (q)uit, (l)ast,";
+	private static final String SPECIAL_LINE_SUFFIX = "(i)gnore?";
+	
+	private MessageConsoleStream streamInUse;
 
 	public ConsolePrinter(MessageConsole console) {
 		this.console = console;
@@ -27,6 +29,7 @@ public class ConsolePrinter {
 		infoStream = getInfoStream(console);
 		warningStream = getWarningStream(console);
 		successStream = getSuccessStream(console);
+		streamInUse = infoStream;
 	}
 
 	public MessageConsole getConsole() {
@@ -56,49 +59,95 @@ public class ConsolePrinter {
 		successStream.setColor(new Color(null, 0, 150, 0));
 		return successStream;
 	}
+//	public void print(byte aByte){
+//		try {
+//			streamInUse.write(aByte);
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//	}
+	public void print(String aString){
+		if(isErrorString(aString)){
+			printErrorString();
+			streamInUse = errorStream;
+		}else if(isSuccessString(aString)){
+			printSuccessString();
+			streamInUse = infoStream;
+		}else if(isWarningString(aString)){
+			printWarningString();
+			streamInUse = infoStream;
+		}else if(isInfoString(aString)){
+			printInfoString();
+			streamInUse = infoStream;
+		}else{
+			streamInUse.print(aString);
+		}
+		streamInUse.print(" ");
+	}
 
 	public void println(String line) {
-		if (isErrorLine(line)) {
-			printErrorLine(line);
-		} else if (isInfoLine(line)) {
-			printInfoLine(line);
-		} else if (isSuccessLine(line)) {
-			printSuccessLine(line);
-		} else if (isWarningLine(line)) {
-			printWarningLine(line);
+		String newLine = checkSpecialLine(line);
+		if (isErrorLine(newLine)) {
+			printErrorLine(newLine);
+		} else if (isInfoLine(newLine)) {
+			printInfoLine(newLine);
+		} else if (isSuccessLine(newLine)) {
+			printSuccessLine(newLine);
+		} else if (isWarningLine(newLine)) {
+			printWarningLine(newLine);
 		} else {
-			infoStream.println(line);
+			infoStream.println(newLine);
 		}
+	}
+	
+	protected String checkSpecialLine(String line){
+		String result = line;
+		if(line.contains(SPECIAL_LINE_PATTERN)){
+			result = line+ SPECIAL_LINE_SUFFIX;
+		}
+		return result;
 	}
 
 	protected void printInfoLine(String line) {
-		infoStream.print("[info]");
+		printInfoString();
 		String newLine = line.substring(INFO_PATTERN.length());
 		infoStream.println(newLine);
 	}
 
 	protected void printErrorLine(String line) {
-		infoStream.print("[");
-		errorStream.print("error");
-		infoStream.print("]");
+		printErrorString();
 		String newLine = line.substring(ERROR_PATTERN.length());
 		errorStream.println(newLine);
 	}
 
 	protected void printSuccessLine(String line) {
-		infoStream.print("[");
-		successStream.print("success");
-		infoStream.print("]");
+		printSuccessString();
 		String newLine = line.substring(SUCCESS_PATTERN.length());
 		infoStream.println(newLine);
 	}
 
 	protected void printWarningLine(String line) {
+		printWarningString();
+		String newLine = line.substring(WARN_PATTERN.length());
+		infoStream.println(newLine);
+	}
+	protected void printInfoString(){
+		infoStream.print("[info]");
+	}
+	protected void printErrorString(){
+		infoStream.print("[");
+		errorStream.print("error");
+		infoStream.print("]");
+	}
+	protected void printSuccessString(){
+		infoStream.print("[");
+		successStream.print("success");
+		infoStream.print("]");
+	}
+	protected void printWarningString(){
 		infoStream.print("[");
 		warningStream.print("warn");
 		infoStream.print("]");
-		String newLine = line.substring(WARN_PATTERN.length());
-		infoStream.println(newLine);
 	}
 
 	protected boolean isErrorLine(String line) {
@@ -116,10 +165,19 @@ public class ConsolePrinter {
 	protected boolean isWarningLine(String line) {
 		return line.startsWith(WARN_PATTERN);
 	}
-	public void dispose() throws IOException{
-		errorStream.close();
-		infoStream.close();
-		successStream.close();
-		warningStream.close();
+	protected boolean isErrorString(String aString) {
+		return aString.startsWith(ERROR_PATTERN);
+	}
+
+	protected boolean isInfoString(String aString) {
+		return aString.startsWith(INFO_PATTERN);
+	}
+
+	protected boolean isSuccessString(String aString) {
+		return aString.startsWith(SUCCESS_PATTERN);
+	}
+
+	protected boolean isWarningString(String aString) {
+		return aString.startsWith(WARN_PATTERN);
 	}
 }

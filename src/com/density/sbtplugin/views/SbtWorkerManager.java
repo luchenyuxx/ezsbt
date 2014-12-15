@@ -19,6 +19,14 @@ public class SbtWorkerManager {
 			return sbtWorker;
 		}
 	}
+	
+	/** only for get sbtWorker, won't create new worker. may get null. */
+	static public SbtWorker getSbtWorker(String key){
+		if (workerMap.containsKey(key) && workerMap.get(key) != null) {
+			return workerMap.get(key);
+		}
+		return null;
+	}
 
 	static public void closeAllSbtWorker() {
 		for (SbtWorker sbtWorker : workerMap.values()) {

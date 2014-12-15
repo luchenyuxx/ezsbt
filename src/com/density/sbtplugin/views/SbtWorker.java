@@ -36,6 +36,8 @@ public class SbtWorker {
 	protected PrintWriter processWriter;
 	protected volatile Scanner scanner;
 
+	public final static String SCANNER_DELIMITER = "\\n|\\r\\n|\\(i\\)gnore\\?";
+
 	protected boolean running = false;
 
 	public SbtWorker(String projectPath, IContainer container, ViewPart view) {
@@ -45,6 +47,7 @@ public class SbtWorker {
 		processBuilder = new ProcessBuilder(getLaunchCommand())
 				.directory(new File(projectPath));
 		processBuilder.environment().put("JAVA_HOME", getJavaHome());
+		processBuilder.redirectErrorStream(true);
 		consolePrinter = ConsolePrinterManager.getPrinter(findConsole(
 				projectPath, container));
 	}
@@ -74,9 +77,7 @@ public class SbtWorker {
 	}
 
 	public void restartSbt() {
-		if (running) {
-			stopSbt();
-		}
+		stopSbt();
 		startSbt();
 	}
 
@@ -95,8 +96,8 @@ public class SbtWorker {
 			@Override
 			public void run() {
 				Thread thisThread = Thread.currentThread();
-				while (scanner.hasNextLine() && thisThread == printThread) {
-					consolePrinter.println(scanner.nextLine());
+				while (scanner.hasNext() && thisThread == printThread) {
+					consolePrinter.println(scanner.next());
 				}
 			}
 		});
@@ -106,7 +107,7 @@ public class SbtWorker {
 	protected void linkInputStream(Process process) {
 		consolePrinter.println("Starting...");
 		scanner = new Scanner(new BufferedReader(new InputStreamReader(
-				process.getInputStream())));
+				process.getInputStream()))).useDelimiter(SCANNER_DELIMITER);
 	}
 
 	protected void linkOutputStream(Process process) {
@@ -164,6 +165,14 @@ public class SbtWorker {
 		SbtPatternMatchListener sbtPatternMatchListener = new SbtPatternMatchListener(
 				container);
 		myConsole.addPatternMatchListener(sbtPatternMatchListener);
+		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
+				"\\(r\\)etry", "r"));
+		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
+				"\\(i\\)gnore", "i"));
+//		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
+//				"\\(q\\)uit", "q"));
+		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
+				"\\(l\\)ast", "l"));
 		return myConsole;
 	}
 

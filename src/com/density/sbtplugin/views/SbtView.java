@@ -36,20 +36,6 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.density.sbtplugin.util.PluginConstants;
 
-/**
- * This sample class demonstrates how to plug-in a new workbench view. The view
- * shows data obtained from the model. The sample creates a dummy model on the
- * fly, but a real implementation would connect to the model available either in
- * this or another plug-in (e.g. the workspace). The view is connected to the
- * model using a content provider.
- * <p>
- * The view uses a label provider to define how model objects should be
- * presented in the view. Each view can present the same model objects using
- * different labels and icons, if needed. Alternatively, a single label provider
- * can be shared between views in order to ensure that objects of the same type
- * are presented in the same way everywhere.
- * <p>
- */
 
 public class SbtView extends ViewPart {
 
@@ -70,6 +56,7 @@ public class SbtView extends ViewPart {
 	private Action editCommandAction;
 	private Action addCommandAction;
 	private Action removeCommandAction;
+	private Action restartSbtAction;
 
 	/*
 	 * The content provider class is responsible for providing objects to the
@@ -189,6 +176,7 @@ public class SbtView extends ViewPart {
 		if (obj.getClass().equals(TreeParent.class)) {
 			manager.add(removeProjectAction);
 			manager.add(addCommandAction);
+			manager.add(restartSbtAction);
 		}
 		if (obj.getClass().equals(TreeObject.class)) {
 			TreeObject target = (TreeObject) obj;
@@ -219,6 +207,15 @@ public class SbtView extends ViewPart {
 		makeEditCommandAction();
 		makeAddCommandAction();
 		makeRemoveCommandAction();
+		makeRestartSbtAction();
+	}
+	protected void makeRestartSbtAction(){
+		restartSbtAction = new Action() {
+			public void run(){
+				doRestartSbtAction();
+			}
+		};
+		restartSbtAction.setText("Restart Sbt");
 	}
 
 	protected void makeAddCommandAction() {
@@ -306,6 +303,10 @@ public class SbtView extends ViewPart {
 				.getSharedImages()
 				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
+	protected void doRestartSbtAction(){
+		TreeParent container = (TreeParent) getSelectedObject();
+		restartSbt(container);
+	}
 
 	protected void doRemoveCommandAction() {
 		TreeObject command = (TreeObject) getSelectedObject();
@@ -346,10 +347,7 @@ public class SbtView extends ViewPart {
 			if (selectedNode.getSbtCommand().equals(
 					PluginConstants.EXIT_COMMAND)) {
 				exitSbt(parent);
-			} else if (selectedNode.getSbtCommand().equals(
-					PluginConstants.RESTART_COMMAND)) {
-				restartSbt(parent);
-			} else {
+			}else {
 				writeCommand(parent, selectedNode.getSbtCommand());
 			}
 		}
@@ -384,7 +382,6 @@ public class SbtView extends ViewPart {
 
 	protected void writeCommand(TreeParent node, String command) {
 		SbtWorkerManager.getSbtWorker(node, this).write(command);
-		;
 	}
 
 	protected void closeAllSbt() {
