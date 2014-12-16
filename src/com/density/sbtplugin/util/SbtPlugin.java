@@ -22,7 +22,7 @@ public class SbtPlugin extends AbstractUIPlugin {
 	
 	protected String getJavaHome() {
 		String java_home = null;
-		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+		if (System.getenv("JAVA_HOME")!=null && !System.getenv("JAVA_HOME").isEmpty()) {
 			java_home = System.getenv("JAVA_HOME");
 		} else
 			java_home = System.getProperty("java.home");
