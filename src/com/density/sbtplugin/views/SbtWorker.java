@@ -28,6 +28,7 @@ public class SbtWorker {
 	protected ViewPart view;
 	protected String projectPath;
 	protected IContainer container;
+	protected TreeParent node;
 	protected ProcessBuilder processBuilder;
 	protected ConsolePrinter consolePrinter;
 
@@ -40,13 +41,13 @@ public class SbtWorker {
 
 	protected boolean running = false;
 
-	public SbtWorker(String projectPath, IContainer container, ViewPart view) {
+	public SbtWorker(TreeParent node, ViewPart view) {
 		this.view = view;
-		this.projectPath = projectPath;
-		this.container = container;
+		this.node = node;
+		this.projectPath = node.getName();
+		this.container = node.getContainer();
 		processBuilder = new ProcessBuilder(getLaunchCommand())
 				.directory(new File(projectPath));
-		processBuilder.environment().put("JAVA_HOME", getJavaHome());
 		processBuilder.redirectErrorStream(true);
 		consolePrinter = ConsolePrinterManager.getPrinter(findConsole(
 				projectPath, container));
@@ -54,6 +55,7 @@ public class SbtWorker {
 
 	protected void startSbt() {
 		try {
+			processBuilder.environment().put("JAVA_HOME", node.getJavaHome());
 			sbtProcess = processBuilder.start();
 			linkInputStream(sbtProcess);
 			linkOutputStream(sbtProcess);
@@ -143,14 +145,14 @@ public class SbtWorker {
 		return result;
 	}
 
-	protected String getJavaHome() {
-		String java_home = null;
-		if (System.getProperty("os.name").toLowerCase().contains("win")) {
-			java_home = System.getenv("JAVA_HOME");
-		} else
-			java_home = System.getProperty("java.home");
-		return java_home;
-	}
+//	protected String getJavaHome() {
+//		String java_home = null;
+//		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+//			java_home = System.getenv("JAVA_HOME");
+//		} else
+//			java_home = System.getProperty("java.home");
+//		return java_home;
+//	}
 
 	private synchronized MessageConsole findConsole(String name,
 			IContainer container) {
@@ -169,8 +171,8 @@ public class SbtWorker {
 				"\\(r\\)etry", "r"));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
 				"\\(i\\)gnore", "i"));
-//		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-//				"\\(q\\)uit", "q"));
+		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
+				"\\(q\\)uit", "q"));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
 				"\\(l\\)ast", "l"));
 		return myConsole;

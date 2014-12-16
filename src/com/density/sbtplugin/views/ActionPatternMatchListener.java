@@ -12,10 +12,11 @@ public class ActionPatternMatchListener implements IPatternMatchListener {
 	private String command;
 	private final static String LINE_QUALIFIER = "\\(r\\)etry, \\(q\\)uit, \\(l\\)ast, or \\(i\\)gnore\\?";
 
-	public ActionPatternMatchListener(String pattern, String command){
+	public ActionPatternMatchListener(String pattern, String command) {
 		this.pattern = pattern;
 		this.command = command;
 	}
+
 	@Override
 	public void connect(TextConsole console) {
 		this.console = console;
@@ -60,7 +61,10 @@ public class ActionPatternMatchListener implements IPatternMatchListener {
 
 			@Override
 			public void linkActivated() {
-				SbtWorkerManager.getSbtWorker(console.getName()).write(command);
+				SbtWorker sbtWorker = SbtWorkerManager.getSbtWorker(console
+						.getName());
+				sbtWorker.write(command);
+				if(command.equals("q")) sbtWorker.stopSbt();
 			}
 		};
 		try {

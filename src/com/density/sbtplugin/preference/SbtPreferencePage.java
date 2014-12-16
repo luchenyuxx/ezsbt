@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
@@ -32,6 +33,7 @@ public class SbtPreferencePage extends PreferencePage implements
 	protected Button addButton;
 	protected Button editButton;
 	protected Button removeButton;
+	protected Text javaHomeInput;
 	protected static final String[] TABLE_COLUMNS_TITLE = { "name", "command" };
 
 	@Override
@@ -40,24 +42,39 @@ public class SbtPreferencePage extends PreferencePage implements
 
 	@Override
 	protected Control createContents(Composite parent) {
-		Label label = new Label(parent, SWT.LEFT);
-		label.setText("Default commands:");
 		Composite root = makeRootComposite(parent);
-		makeTable(root);
-		makeButtonComposite(root);
+		makeCommandsPreference(root);
+		makeJavaHomePreference(root);
 		return root;
 	}
-
-	protected Composite makeRootComposite(Composite parent) {
-		Composite rootComposite = new Composite(parent, SWT.EMBEDDED
-				| SWT.HORIZONTAL);
-		rootComposite.setLayout(new RowLayout());
+	
+	protected void makeJavaHomePreference(Composite parent){
+		Label label = new Label(parent, SWT.LEFT);
+		label.setText("Default javaHome:");
+		javaHomeInput = new Text(parent, SWT.LEFT|SWT.BORDER);
+		IPreferenceStore store = getPreferenceStore();
+		javaHomeInput.setText(store.getString(PluginConstants.JAVA_HOME_KEY));
+		javaHomeInput.setLayoutData(new RowData(350, SWT.DEFAULT));
+	}
+	
+	protected Composite makeRootComposite(Composite parent){
+		Composite rootComposite = new Composite(parent, SWT.EMBEDDED);
+		rootComposite.setLayout(new RowLayout(SWT.VERTICAL));
 		return rootComposite;
 	}
+	
+	protected void makeCommandsPreference(Composite parent){
+		Label label = new Label(parent, SWT.LEFT);
+		label.setText("Default commands:");
+		Composite commandsPreferenceRootComposite = new Composite(parent, SWT.EMBEDDED);
+		commandsPreferenceRootComposite.setLayout(new RowLayout());
+		makeTable(commandsPreferenceRootComposite);
+		makeButtonComposite(commandsPreferenceRootComposite);
+	}
 
-	protected Composite makeButtonComposite(Composite parent) {
+	protected void makeButtonComposite(Composite parent) {
 		Composite buttonComposite = new Composite(parent, SWT.NONE);
-		buttonComposite.setLayoutData(new RowData(100, 300));
+		buttonComposite.setLayoutData(new RowData(80, 200));
 		RowLayout rowLayout = new RowLayout(SWT.VERTICAL);
 		rowLayout.fill = true;
 		buttonComposite.setLayout(rowLayout);
@@ -90,12 +107,11 @@ public class SbtPreferencePage extends PreferencePage implements
 				doRemoveCommand();
 			}
 		});
-		return buttonComposite;
 	}
 
 	protected void makeTable(Composite parent) {
 		Composite tableComposite = new Composite(parent, SWT.NONE);
-		tableComposite.setLayoutData(new RowData(300, 300));
+		tableComposite.setLayoutData(new RowData(300, 200));
 		TableColumnLayout tableColumnLayout = new TableColumnLayout();
 		tableComposite.setLayout(tableColumnLayout);
 		TableViewer tableViewer = new TableViewer(tableComposite, SWT.SINGLE|SWT.V_SCROLL|SWT.H_SCROLL|SWT.BORDER|SWT.FULL_SELECTION);
@@ -163,6 +179,7 @@ public class SbtPreferencePage extends PreferencePage implements
 		}
 		editButton.setEnabled(false);
 		removeButton.setEnabled(false);
+		javaHomeInput.setText(store.getDefaultString(PluginConstants.JAVA_HOME_KEY));
 	}
 
 	@Override
@@ -175,6 +192,7 @@ public class SbtPreferencePage extends PreferencePage implements
 					item.getText(1));
 		}
 		store.setValue(PluginConstants.COMMANDS_NAME_KEY, sum);
+		store.setValue(PluginConstants.JAVA_HOME_KEY, javaHomeInput.getText());
 	}
 
 	@Override

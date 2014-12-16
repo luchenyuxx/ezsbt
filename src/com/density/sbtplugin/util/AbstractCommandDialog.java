@@ -34,7 +34,6 @@ public abstract class AbstractCommandDialog extends TitleAreaDialog {
 	protected Control createDialogArea(Composite parent) {
 		Composite area = (Composite) super.createDialogArea(parent);
 		Composite container = new Composite(area, SWT.NONE);
-		container.setLayoutData(new GridData(GridData.FILL_BOTH));
 		GridLayout layout = new GridLayout(2, false);
 		container.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		container.setLayout(layout);

@@ -65,6 +65,7 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 					CommandsConvertor.valueOf(commandPair));
 			newSbtProject.addChild(commandObject);
 		}
+		newSbtProject.setJavaHome(store.getString(PluginConstants.JAVA_HOME_KEY));
 		root.addChild(newSbtProject);
 		getViewer().refresh();
 	}

@@ -13,8 +13,7 @@ public class SbtWorkerManager {
 		if (workerMap.containsKey(path) && workerMap.get(path) != null) {
 			return workerMap.get(path);
 		} else {
-			SbtWorker sbtWorker = new SbtWorker(node.getName(),
-					node.getContainer(), view);
+			SbtWorker sbtWorker = new SbtWorker(node, view);
 			workerMap.put(path, sbtWorker);
 			return sbtWorker;
 		}

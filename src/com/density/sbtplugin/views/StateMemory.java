@@ -8,6 +8,7 @@ public class StateMemory {
 	static public String CONTAINER_NAME_KEY = "name";
 	static public String COMMAND_NAME_KEY = "name";
 	static public String COMMAND_VALUE_KEY = "sbtcommand";
+	static public String JAVA_HOME_KEY = "javaHome";
 
 	static public void rememberState(SbtViewContentProvider viewContentProvider,
 			IMemento rootMem) {
@@ -16,6 +17,7 @@ public class StateMemory {
 			TreeParent container = (TreeParent) containerNode;
 			IMemento containerMem = rootMem.createChild(CONTAINER_TYPE);
 			containerMem.putString(CONTAINER_NAME_KEY, container.getName());
+			containerMem.putString(JAVA_HOME_KEY, container.getJavaHome());
 			for (TreeObject command : container.getChildren()) {
 				IMemento commandMem = containerMem
 						.createChild(COMMAND_BUTTON_TYPE);
@@ -32,6 +34,7 @@ public class StateMemory {
 		for (IMemento containerMem : rootMem.getChildren()) {
 			TreeParent newContainer = new TreeParent(
 					containerMem.getString(CONTAINER_NAME_KEY));
+			newContainer.setJavaHome(containerMem.getString(JAVA_HOME_KEY));
 			for (IMemento commandMem : containerMem.getChildren()) {
 				newContainer.addChild(new TreeObject(commandMem
 						.getString(COMMAND_NAME_KEY), commandMem

@@ -8,6 +8,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 
 public class TreeParent extends TreeObject {
+	private String javaHome;
 	private ArrayList<TreeObject> children;
 
 	public boolean hasChild(String childName){
@@ -53,6 +54,12 @@ public class TreeParent extends TreeObject {
 				.size()]);
 	}
 
+	public String getJavaHome() {
+		return javaHome;
+	}
+	public void setJavaHome(String javaHome) {
+		this.javaHome = javaHome;
+	}
 	public boolean hasChildren() {
 		return children.size() > 0;
 	}
