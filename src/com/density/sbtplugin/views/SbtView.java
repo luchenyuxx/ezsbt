@@ -1,5 +1,9 @@
 package com.density.sbtplugin.views;
 
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
@@ -24,6 +28,7 @@ import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IMemento;
@@ -35,7 +40,6 @@ import org.eclipse.ui.part.DrillDownAdapter;
 import org.eclipse.ui.part.ViewPart;
 
 import com.density.sbtplugin.util.PluginConstants;
-
 
 public class SbtView extends ViewPart {
 
@@ -108,10 +112,34 @@ public class SbtView extends ViewPart {
 				.setHelp(viewer.getControl(), PluginConstants.CONTROL_ID);
 		makeActions();
 		addKeyListener();
+		addResourceChangeListener();
 		addDragAndDrop();
 		hookContextMenu();
 		hookDoubleClickAction();
 		contributeToActionBars();
+	}
+
+	protected void addResourceChangeListener() {
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(
+				new IResourceChangeListener() {
+
+					@Override
+					public void resourceChanged(IResourceChangeEvent event) {
+						IResource resource = event.getResource();
+						String path = resource.getLocationURI().getRawPath();
+						if (System.getProperty("os.name").toLowerCase()
+								.contains("win")) {
+							path = path.substring(1);
+						}
+						final String finalPath = path;
+						Display.getDefault().syncExec(new Runnable() {
+							@Override
+							public void run() {
+								remove(finalPath);								
+							}
+						});
+					}
+				}, IResourceChangeEvent.PRE_CLOSE);
 	}
 
 	protected void addKeyListener() {
@@ -212,18 +240,19 @@ public class SbtView extends ViewPart {
 		makeRestartSbtAction();
 		makeSetJavaHomeAction();
 	}
-	protected void makeSetJavaHomeAction(){
+
+	protected void makeSetJavaHomeAction() {
 		setJavaHomeAction = new Action() {
-			public void run(){
+			public void run() {
 				doSetJavaHomeAction();
 			}
 		};
 		setJavaHomeAction.setText("Set java home");
 	}
-	
-	protected void makeRestartSbtAction(){
+
+	protected void makeRestartSbtAction() {
 		restartSbtAction = new Action() {
-			public void run(){
+			public void run() {
 				doRestartSbtAction();
 			}
 		};
@@ -315,13 +344,16 @@ public class SbtView extends ViewPart {
 				.getSharedImages()
 				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
-	protected void doSetJavaHomeAction(){
-		TreeParent container = (TreeParent)getSelectedObject();
-		SetJavaHomeDialog dialog = new SetJavaHomeDialog(viewer.getControl().getShell(), container);
+
+	protected void doSetJavaHomeAction() {
+		TreeParent container = (TreeParent) getSelectedObject();
+		SetJavaHomeDialog dialog = new SetJavaHomeDialog(viewer.getControl()
+				.getShell(), container);
 		dialog.create();
 		dialog.open();
 	}
-	protected void doRestartSbtAction(){
+
+	protected void doRestartSbtAction() {
 		TreeParent container = (TreeParent) getSelectedObject();
 		restartSbt(container);
 	}
@@ -365,7 +397,7 @@ public class SbtView extends ViewPart {
 			if (selectedNode.getSbtCommand().equals(
 					PluginConstants.EXIT_COMMAND)) {
 				exitSbt(parent);
-			}else {
+			} else {
 				writeCommand(parent, selectedNode.getSbtCommand());
 			}
 		}
@@ -422,6 +454,15 @@ public class SbtView extends ViewPart {
 				.getInvisibleRoot();
 		closeSbt(project);
 		root.removeChild(project);
+		viewer.refresh();
+	}
+
+	protected void remove(String projectPath) {
+		TreeParent root = viewContentProvider
+				.getInvisibleRoot();
+		if(SbtWorkerManager.getSbtWorker(projectPath)!=null)
+		SbtWorkerManager.getSbtWorker(projectPath).stopSbt();
+		root.removeChild(projectPath);
 		viewer.refresh();
 	}
 

@@ -24,7 +24,7 @@ public class SetJavaHomeDialog extends TitleAreaDialog{
 	protected final static String TITLE = "Set java home of ";
 	protected final static String MESSAGE = "Value should not be empty. If so, press OK buttion will do nothing.\n"
 			+ "Set java home makes effect the next time SBT starts.\n"
-			+ "Set java home sets the environment variable JAVA_HOME of SBT process. It won't change the java which runs SBT.";
+			+ "Set java home sets the environment variable JAVA_HOME of SBT process.";
 	
 	public SetJavaHomeDialog(Shell parentShell, TreeParent node) {
 		super(parentShell);

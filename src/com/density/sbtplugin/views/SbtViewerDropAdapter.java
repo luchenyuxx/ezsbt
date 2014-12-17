@@ -35,20 +35,23 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 	}
 
 	protected boolean addNewSbtProject(IContainer container) {
-		SbtViewContentProvider contentProvider = (SbtViewContentProvider) ((TreeViewer) getViewer())
-				.getContentProvider();
-		TreeParent root = contentProvider.getInvisibleRoot();
-		String path = getPath(container);
-		if (!root.hasChild(path)) {
-			addNewSbtProject(path, root);
-			return true;
-		} else {
-			return false;
+		if (container.isAccessible()) {
+			SbtViewContentProvider contentProvider = (SbtViewContentProvider) ((TreeViewer) getViewer())
+					.getContentProvider();
+			TreeParent root = contentProvider.getInvisibleRoot();
+			String path = getPath(container);
+			if (!root.hasChild(path)) {
+				addNewSbtProject(path, root);
+				return true;
+			}
 		}
+		return false;
+
 	}
-	protected String getPath(IContainer container){
+
+	protected String getPath(IContainer container) {
 		String path = container.getLocationURI().getRawPath();
-		if(System.getProperty("os.name").toLowerCase().contains("win")){
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
 			return path.substring(1);
 		}
 		return path;
@@ -65,7 +68,8 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 					CommandsConvertor.valueOf(commandPair));
 			newSbtProject.addChild(commandObject);
 		}
-		newSbtProject.setJavaHome(store.getString(PluginConstants.JAVA_HOME_KEY));
+		newSbtProject.setJavaHome(store
+				.getString(PluginConstants.JAVA_HOME_KEY));
 		root.addChild(newSbtProject);
 		getViewer().refresh();
 	}

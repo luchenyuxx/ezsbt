@@ -98,7 +98,7 @@ public class SbtWorker {
 			@Override
 			public void run() {
 				Thread thisThread = Thread.currentThread();
-				while (scanner.hasNext() && thisThread == printThread) {
+				while (thisThread == printThread) {
 					consolePrinter.println(scanner.next());
 				}
 			}
