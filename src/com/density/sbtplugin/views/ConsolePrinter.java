@@ -5,6 +5,7 @@ import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
 
 public class ConsolePrinter {
+	private boolean foldResolvingMessage = true;
 	private MessageConsole console;
 	private MessageConsoleStream errorStream;
 	private MessageConsoleStream infoStream;
@@ -16,7 +17,7 @@ public class ConsolePrinter {
 	private static final String WARN_PATTERN = "[warn]";
 	private static final String SPECIAL_LINE_PATTERN = "(r)etry, (q)uit, (l)ast,";
 	private static final String SPECIAL_LINE_SUFFIX = "(i)gnore?";
-	
+
 	private MessageConsoleStream streamInUse;
 
 	public ConsolePrinter(MessageConsole console) {
@@ -59,27 +60,21 @@ public class ConsolePrinter {
 		successStream.setColor(new Color(null, 0, 150, 0));
 		return successStream;
 	}
-//	public void print(byte aByte){
-//		try {
-//			streamInUse.write(aByte);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//	}
-	public void print(String aString){
-		if(isErrorString(aString)){
+
+	public void print(String aString) {
+		if (isErrorString(aString)) {
 			printErrorString();
 			streamInUse = errorStream;
-		}else if(isSuccessString(aString)){
+		} else if (isSuccessString(aString)) {
 			printSuccessString();
 			streamInUse = infoStream;
-		}else if(isWarningString(aString)){
+		} else if (isWarningString(aString)) {
 			printWarningString();
 			streamInUse = infoStream;
-		}else if(isInfoString(aString)){
+		} else if (isInfoString(aString)) {
 			printInfoString();
 			streamInUse = infoStream;
-		}else{
+		} else {
 			streamInUse.print(aString);
 		}
 		streamInUse.print(" ");
@@ -99,19 +94,22 @@ public class ConsolePrinter {
 			infoStream.println(newLine);
 		}
 	}
-	
-	protected String checkSpecialLine(String line){
+
+	protected String checkSpecialLine(String line) {
 		String result = line;
-		if(line.contains(SPECIAL_LINE_PATTERN)){
-			result = line+ SPECIAL_LINE_SUFFIX;
+		if (line.contains(SPECIAL_LINE_PATTERN)) {
+			result = line + SPECIAL_LINE_SUFFIX;
 		}
 		return result;
 	}
 
 	protected void printInfoLine(String line) {
-		printInfoString();
 		String newLine = line.substring(INFO_PATTERN.length());
-		infoStream.println(newLine);
+		if (foldResolvingMessage && newLine.startsWith(" Resolving")) {
+		} else {
+			printInfoString();
+			infoStream.println(newLine);
+		}
 	}
 
 	protected void printErrorLine(String line) {
@@ -131,20 +129,24 @@ public class ConsolePrinter {
 		String newLine = line.substring(WARN_PATTERN.length());
 		infoStream.println(newLine);
 	}
-	protected void printInfoString(){
+
+	protected void printInfoString() {
 		infoStream.print("[info]");
 	}
-	protected void printErrorString(){
+
+	protected void printErrorString() {
 		infoStream.print("[");
 		errorStream.print("error");
 		infoStream.print("]");
 	}
-	protected void printSuccessString(){
+
+	protected void printSuccessString() {
 		infoStream.print("[");
 		successStream.print("success");
 		infoStream.print("]");
 	}
-	protected void printWarningString(){
+
+	protected void printWarningString() {
 		infoStream.print("[");
 		warningStream.print("warn");
 		infoStream.print("]");
@@ -165,6 +167,7 @@ public class ConsolePrinter {
 	protected boolean isWarningLine(String line) {
 		return line.startsWith(WARN_PATTERN);
 	}
+
 	protected boolean isErrorString(String aString) {
 		return aString.startsWith(ERROR_PATTERN);
 	}

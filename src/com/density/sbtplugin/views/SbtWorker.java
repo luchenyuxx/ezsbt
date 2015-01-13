@@ -85,11 +85,14 @@ public class SbtWorker {
 
 	public void write(String input) {
 		if (running) {
+			MessageConsole console = findConsole(projectPath, container);
+			console.clearConsole();
 			processWriter.println(input);
-			revealConsole(findConsole(projectPath, container));
+			revealConsole(console);
 		} else {
 			startSbt();
-			write(input);
+			processWriter.println(input);
+			revealConsole(findConsole(projectPath, container));
 		}
 	}
 
@@ -144,15 +147,6 @@ public class SbtWorker {
 		}
 		return result;
 	}
-
-//	protected String getJavaHome() {
-//		String java_home = null;
-//		if (System.getProperty("os.name").toLowerCase().contains("win")) {
-//			java_home = System.getenv("JAVA_HOME");
-//		} else
-//			java_home = System.getProperty("java.home");
-//		return java_home;
-//	}
 
 	private synchronized MessageConsole findConsole(String name,
 			IContainer container) {
