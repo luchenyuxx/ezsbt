@@ -4,8 +4,10 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.console.MessageConsoleStream;
 
+import com.density.sbtplugin.util.PluginConstants;
+import com.density.sbtplugin.util.SbtPlugin;
+
 public class ConsolePrinter {
-	private boolean foldResolvingMessage = true;
 	private MessageConsole console;
 	private MessageConsoleStream errorStream;
 	private MessageConsoleStream infoStream;
@@ -105,7 +107,7 @@ public class ConsolePrinter {
 
 	protected void printInfoLine(String line) {
 		String newLine = line.substring(INFO_PATTERN.length());
-		if (foldResolvingMessage && newLine.startsWith(" Resolving")) {
+		if (isHideResolveMessage() && newLine.startsWith(" Resolving")) {
 		} else {
 			printInfoString();
 			infoStream.println(newLine);
@@ -182,5 +184,9 @@ public class ConsolePrinter {
 
 	protected boolean isWarningString(String aString) {
 		return aString.startsWith(WARN_PATTERN);
+	}
+	
+	protected boolean isHideResolveMessage(){
+		return SbtPlugin.getInstance().getPreferenceStore().getBoolean(PluginConstants.HIDE_RESOLVE_KEY);
 	}
 }

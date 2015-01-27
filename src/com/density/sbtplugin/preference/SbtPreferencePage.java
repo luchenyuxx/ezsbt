@@ -10,6 +10,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
@@ -34,6 +35,8 @@ public class SbtPreferencePage extends PreferencePage implements
 	protected Button editButton;
 	protected Button removeButton;
 	protected Text javaHomeInput;
+	protected Text javaOptionsInput;
+	protected Button hideResolveCheck;
 	protected static final String[] TABLE_COLUMNS_TITLE = { "name", "command" };
 
 	@Override
@@ -45,6 +48,8 @@ public class SbtPreferencePage extends PreferencePage implements
 		Composite root = makeRootComposite(parent);
 		makeCommandsPreference(root);
 		makeJavaHomePreference(root);
+		makeJavaOptionsPreference(root);
+		makeHideResolveMessagePreference(root);
 		return root;
 	}
 	
@@ -55,6 +60,24 @@ public class SbtPreferencePage extends PreferencePage implements
 		IPreferenceStore store = getPreferenceStore();
 		javaHomeInput.setText(store.getString(PluginConstants.JAVA_HOME_KEY));
 		javaHomeInput.setLayoutData(new RowData(350, SWT.DEFAULT));
+	}
+	
+	protected void makeJavaOptionsPreference(Composite parent){
+		Label label = new Label(parent, SWT.LEFT);
+		label.setText("Java options:");
+		javaOptionsInput = new Text(parent, SWT.LEFT|SWT.BORDER);
+		IPreferenceStore store = getPreferenceStore();
+		javaOptionsInput.setText(store.getString(PluginConstants.JAVA_OPTIONS_KEY));
+		javaOptionsInput.setLayoutData(new RowData(350, SWT.DEFAULT));
+	}
+	
+	protected void makeHideResolveMessagePreference(Composite parent){
+		Composite checkBoxPanel = new Composite(parent, SWT.EMBEDDED);
+		checkBoxPanel.setLayout(new GridLayout(2, false));
+		Label label = new Label(checkBoxPanel, SWT.LEFT);
+		label.setText("Hide resolving messages");
+		hideResolveCheck = new Button(checkBoxPanel, SWT.CHECK);
+		hideResolveCheck.setSelection(getPreferenceStore().getBoolean(PluginConstants.HIDE_RESOLVE_KEY));
 	}
 	
 	protected Composite makeRootComposite(Composite parent){
@@ -180,6 +203,8 @@ public class SbtPreferencePage extends PreferencePage implements
 		editButton.setEnabled(false);
 		removeButton.setEnabled(false);
 		javaHomeInput.setText(store.getDefaultString(PluginConstants.JAVA_HOME_KEY));
+		javaOptionsInput.setText(store.getDefaultString(PluginConstants.JAVA_OPTIONS_KEY));
+		hideResolveCheck.setSelection(store.getDefaultBoolean(PluginConstants.HIDE_RESOLVE_KEY));
 	}
 
 	@Override
@@ -193,6 +218,8 @@ public class SbtPreferencePage extends PreferencePage implements
 		}
 		store.setValue(PluginConstants.COMMANDS_NAME_KEY, sum);
 		store.setValue(PluginConstants.JAVA_HOME_KEY, javaHomeInput.getText());
+		store.setValue(PluginConstants.JAVA_OPTIONS_KEY, javaOptionsInput.getText());
+		store.setValue(PluginConstants.HIDE_RESOLVE_KEY, hideResolveCheck.getSelection());
 	}
 
 	@Override

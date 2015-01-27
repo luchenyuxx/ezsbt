@@ -1,5 +1,7 @@
 package com.density.sbtplugin.views;
 
+import java.util.Arrays;
+
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -70,6 +72,7 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 		}
 		newSbtProject.setJavaHome(store
 				.getString(PluginConstants.JAVA_HOME_KEY));
+		newSbtProject.setJavaOptions(Arrays.asList(store.getString(PluginConstants.JAVA_OPTIONS_KEY).split(" ")));
 		root.addChild(newSbtProject);
 		getViewer().refresh();
 	}

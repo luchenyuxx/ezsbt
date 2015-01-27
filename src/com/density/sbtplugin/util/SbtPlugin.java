@@ -18,6 +18,8 @@ public class SbtPlugin extends AbstractUIPlugin {
 		store.setDefault(PluginConstants.COMMANDS_NAME_KEY,
 				CommandsConvertor.arrayToString(PluginConstants.DEFAULT_COMMANDS));
 		store.setDefault(PluginConstants.JAVA_HOME_KEY, getJavaHome());
+		store.setDefault(PluginConstants.JAVA_OPTIONS_KEY, PluginConstants.DEFAULT_JAVA_OPTIONS);
+		store.setDefault(PluginConstants.HIDE_RESOLVE_KEY, PluginConstants.DEFAULT_HIDE_RESOLVE);
 	}
 	
 	protected String getJavaHome() {

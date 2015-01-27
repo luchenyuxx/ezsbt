@@ -1,14 +1,17 @@
 package com.density.sbtplugin.views;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 
+
 public class TreeParent extends TreeObject {
 	private String javaHome;
+	private List<String> javaOptions;
 	private ArrayList<TreeObject> children;
 
 	public boolean hasChild(String childName){
@@ -59,6 +62,13 @@ public class TreeParent extends TreeObject {
 	}
 	public void setJavaHome(String javaHome) {
 		this.javaHome = javaHome;
+	}
+	
+	public List<String> getJavaOptions() {
+		return javaOptions;
+	}
+	public void setJavaOptions(List<String> javaOptions) {
+		this.javaOptions = javaOptions;
 	}
 	public boolean hasChildren() {
 		return children.size() > 0;

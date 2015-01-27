@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import org.eclipse.core.resources.IContainer;
@@ -120,17 +121,19 @@ public class SbtWorker {
 	}
 
 	protected String[] getLaunchCommand() {
+		ArrayList<String> commands = new ArrayList<String>();
+		commands.add("java");
+		commands.addAll(node.getJavaOptions());
 		if (System.getProperty("os.name").toLowerCase().contains("win")) {
-			return new String[] { "java", "-Xmx512m",
-					"-Djline.terminal=jline.UnsupportedTerminal",
-					"-XX:ReservedCodeCacheSize=128m",
-					"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m", "-cp",
-					getSbtLaunchPath(), "xsbt.boot.Boot" };
-		} else
-			return new String[] { "java", "-Xmx512m",
-					"-XX:ReservedCodeCacheSize=128m",
-					"-Dsbt.log.noformat=true", "-XX:MaxPermSize=256m", "-jar",
-					getSbtLaunchPath() };
+			commands.add("-Djline.terminal=jline.UnsupportedTerminal");
+			commands.add("-cp");
+			commands.add(getSbtLaunchPath());
+			commands.add("xsbt.boot.Boot");
+		} else {
+			commands.add("-jar");
+			commands.add(getSbtLaunchPath());
+		}
+		return commands.toArray(new String[0]);
 	}
 
 	protected String getSbtLaunchPath() {
