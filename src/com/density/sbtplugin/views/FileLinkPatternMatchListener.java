@@ -10,14 +10,14 @@ import org.eclipse.ui.console.IPatternMatchListener;
 import org.eclipse.ui.console.PatternMatchEvent;
 import org.eclipse.ui.console.TextConsole;
 
-public class SbtPatternMatchListener implements IPatternMatchListener {
+public class FileLinkPatternMatchListener implements IPatternMatchListener {
 	private TextConsole console;
 	private IContainer container;
 	private final static String PATTERN = "\\S+\\w+\\.(java|scala):[0-9]+";
 	private final static String LINE_QUALIFIER = ".*:[0-9]+:.*";
 	private final static String SPLIT_SEPARATOR = ":";
 
-	public SbtPatternMatchListener(IContainer container) {
+	public FileLinkPatternMatchListener(IContainer container) {
 		this.container = container;
 	}
 

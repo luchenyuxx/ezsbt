@@ -154,16 +154,15 @@ public class SbtWorker {
 	private synchronized MessageConsole findConsole(String name,
 			IContainer container) {
 		ConsolePlugin plugin = ConsolePlugin.getDefault();
-		IConsoleManager conMan = plugin.getConsoleManager();
-		IConsole[] existing = conMan.getConsoles();
+		IConsoleManager consoleManager = plugin.getConsoleManager();
+		IConsole[] existing = consoleManager.getConsoles();
 		for (int i = 0; i < existing.length; i++)
 			if (name.equals(existing[i].getName()))
 				return (MessageConsole) existing[i];
 		MessageConsole myConsole = new MessageConsole(name, null);
-		conMan.addConsoles(new IConsole[] { myConsole });
-		SbtPatternMatchListener sbtPatternMatchListener = new SbtPatternMatchListener(
-				container);
-		myConsole.addPatternMatchListener(sbtPatternMatchListener);
+		consoleManager.addConsoles(new IConsole[] { myConsole });
+		myConsole.addPatternMatchListener(new FileLinkPatternMatchListener(
+				container));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
 				"\\(r\\)etry", "r"));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
