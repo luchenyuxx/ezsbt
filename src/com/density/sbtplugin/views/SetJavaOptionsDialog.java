@@ -1,6 +1,7 @@
 package com.density.sbtplugin.views;
 
-import org.eclipse.jface.dialogs.IMessageProvider;
+import java.util.Arrays;
+
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.SWT;
@@ -18,23 +19,20 @@ import org.eclipse.swt.widgets.Text;
 import com.density.sbtplugin.util.PluginConstants;
 import com.density.sbtplugin.util.SbtPlugin;
 
-public class SetJavaHomeDialog extends TitleAreaDialog{
+public class SetJavaOptionsDialog extends TitleAreaDialog {
 	protected TreeParent node;
-	protected Text javaHome;
-	protected final static String TITLE = "Set java home of ";
-	protected final static String MESSAGE = "Value should not be empty. If so, press OK buttion will do nothing.\n"
-			+ "Set java home makes effect the next time SBT starts.\n"
-			+ "Set java home sets the environment variable JAVA_HOME of SBT process.";
-	
-	public SetJavaHomeDialog(Shell parentShell, TreeParent node) {
+	protected Text javaOptions;
+	protected final static String TITLE = "Set java options of ";
+
+	public SetJavaOptionsDialog(Shell parentShell, TreeParent node) {
 		super(parentShell);
 		this.node = node;
 	}
+	
 	@Override
 	public void create() {
 		super.create();
 		setTitle(TITLE + node.getName());
-		setMessage(MESSAGE, IMessageProvider.INFORMATION);
 	}
 	
 	@Override
@@ -43,7 +41,7 @@ public class SetJavaHomeDialog extends TitleAreaDialog{
 		Composite container = new Composite(area, SWT.NONE);
 		container.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
 		container.setLayout(new GridLayout(2, false));
-		createJavaHomeInput(container);
+		createJavaOptionsInput(container);
 		Button defaultButton = new Button(container, SWT.DEFAULT);
 		defaultButton.setText("default");
 		defaultButton.addSelectionListener(new SelectionListener() {
@@ -51,7 +49,7 @@ public class SetJavaHomeDialog extends TitleAreaDialog{
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				IPreferenceStore store = SbtPlugin.getInstance().getPreferenceStore();
-				javaHome.setText(store.getString(PluginConstants.JAVA_HOME_KEY));
+				javaOptions.setText(store.getString(PluginConstants.JAVA_OPTIONS_KEY));
 			}
 			
 			@Override
@@ -60,23 +58,23 @@ public class SetJavaHomeDialog extends TitleAreaDialog{
 		});
 		return super.createDialogArea(parent);
 	}
-	
-	protected void createJavaHomeInput(Composite container){
+
+	protected void createJavaOptionsInput(Composite container){
 		Label label = new Label(container, SWT.NONE);
-		label.setText("java home:");
+		label.setText("java options:");
 		GridData gridData = new GridData();
 		gridData.grabExcessHorizontalSpace = true;
 		gridData.horizontalAlignment = GridData.FILL;
 
-		javaHome = new Text(container, SWT.BORDER);
-		javaHome.setLayoutData(gridData);
-		javaHome.setText(node.getJavaHome());
+		javaOptions = new Text(container, SWT.BORDER);
+		javaOptions.setLayoutData(gridData);
+		javaOptions.setText(StateMemory.optionsListToString(node.getJavaOptions()));
 	}
 	
 	@Override
 	protected void okPressed() {
-		if(!javaHome.getText().isEmpty()){
-			node.setJavaHome(javaHome.getText());
+		if(!javaOptions.getText().isEmpty()){
+			node.setJavaOptions(Arrays.asList(javaOptions.getText()));
 		}
 		super.okPressed();
 	}

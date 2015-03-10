@@ -62,6 +62,7 @@ public class SbtView extends ViewPart {
 	private Action removeCommandAction;
 	private Action restartSbtAction;
 	private Action setJavaHomeAction;
+	private Action setJavaOptionsAction;
 
 	/*
 	 * The content provider class is responsible for providing objects to the
@@ -207,6 +208,7 @@ public class SbtView extends ViewPart {
 			manager.add(addCommandAction);
 			manager.add(restartSbtAction);
 			manager.add(setJavaHomeAction);
+			manager.add(setJavaOptionsAction);
 		}
 		if (obj.getClass().equals(TreeObject.class)) {
 			TreeObject target = (TreeObject) obj;
@@ -239,6 +241,16 @@ public class SbtView extends ViewPart {
 		makeRemoveCommandAction();
 		makeRestartSbtAction();
 		makeSetJavaHomeAction();
+		makeSetJavaOptionsAction();
+	}
+	
+	protected void makeSetJavaOptionsAction() {
+		setJavaOptionsAction = new Action() {
+			public void run() {
+				doSetJavaOptionsAction();
+			}
+		};
+		setJavaOptionsAction.setText("Set java options");
 	}
 
 	protected void makeSetJavaHomeAction() {
@@ -343,6 +355,14 @@ public class SbtView extends ViewPart {
 		removeProjectAction.setImageDescriptor(PlatformUI.getWorkbench()
 				.getSharedImages()
 				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+	}
+	
+	protected void doSetJavaOptionsAction(){
+		TreeParent container = (TreeParent) getSelectedObject();
+		SetJavaOptionsDialog dialog = new SetJavaOptionsDialog(viewer.getControl()
+				.getShell(), container);
+		dialog.create();
+		dialog.open();
 	}
 
 	protected void doSetJavaHomeAction() {

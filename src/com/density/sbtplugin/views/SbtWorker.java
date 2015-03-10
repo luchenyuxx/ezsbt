@@ -40,28 +40,26 @@ public class SbtWorker {
 
 	public final static String SCANNER_DELIMITER = "\\n|\\r\\n|\\(i\\)gnore\\?";
 
-	protected boolean running = false;
-
 	public SbtWorker(TreeParent node, ViewPart view) {
 		this.view = view;
 		this.node = node;
 		this.projectPath = node.getName();
 		this.container = node.getContainer();
-		processBuilder = new ProcessBuilder(getLaunchCommand())
-				.directory(new File(projectPath));
-		processBuilder.redirectErrorStream(true);
 		consolePrinter = ConsolePrinterManager.getPrinter(findConsole(
 				projectPath, container));
+		processBuilder = new ProcessBuilder("");
 	}
 
 	protected void startSbt() {
 		try {
+			processBuilder.command(getLaunchCommand()).directory(
+					new File(projectPath));
+			processBuilder.redirectErrorStream(true);
 			processBuilder.environment().put("JAVA_HOME", node.getJavaHome());
 			sbtProcess = processBuilder.start();
 			linkInputStream(sbtProcess);
 			linkOutputStream(sbtProcess);
 			startPrintThread();
-			running = true;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -69,13 +67,12 @@ public class SbtWorker {
 
 	// if running, close, if not, do nothing
 	public void stopSbt() {
-		if (running) {
+		if (!isProcessTerminated()) {
 			processWriter.close();
 			sbtProcess = null;
 			printThread = null;
 			processWriter = null;
 			scanner = null;
-			running = false;
 		}
 	}
 
@@ -85,7 +82,7 @@ public class SbtWorker {
 	}
 
 	public void write(String input) {
-		if (running) {
+		if (!isProcessTerminated()) {
 			MessageConsole console = findConsole(projectPath, container);
 			console.clearConsole();
 			processWriter.println(input);
@@ -186,6 +183,17 @@ public class SbtWorker {
 	}
 
 	public boolean isWorking() {
-		return running;
+		return !isProcessTerminated();
+	}
+	
+	protected boolean isProcessTerminated(){
+		try{
+			sbtProcess.exitValue();
+			return true;
+		}catch(IllegalThreadStateException e){
+			return false;
+		}catch(NullPointerException e){
+			return true;
+		}
 	}
 }
