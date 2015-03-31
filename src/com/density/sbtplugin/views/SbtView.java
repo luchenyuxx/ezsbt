@@ -11,6 +11,7 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
@@ -54,7 +55,6 @@ public class SbtView extends ViewPart {
 	private SbtViewContentProvider viewContentProvider = new SbtViewContentProvider(
 			this);
 	private Action removeAllAction;
-	private Action stopAllAction;
 	private Action removeProjectAction;
 	private Action doubleClickAction;
 	private Action editCommandAction;
@@ -198,7 +198,6 @@ public class SbtView extends ViewPart {
 	private void fillLocalPullDown(IMenuManager manager) {
 		manager.add(removeAllAction);
 		manager.add(new Separator());
-		manager.add(stopAllAction);
 	}
 
 	private void fillContextMenu(IMenuManager manager) {
@@ -217,23 +216,16 @@ public class SbtView extends ViewPart {
 				manager.add(removeCommandAction);
 			}
 		}
-		// manager.add(removeAllAction);
-		// manager.add(stopAllAction);
-		// manager.add(new Separator());
-		// drillDownAdapter.addNavigationActions(manager);
-		// manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
 
 	private void fillLocalToolBar(IToolBarManager manager) {
 		manager.add(removeAllAction);
-		manager.add(stopAllAction);
 		manager.add(new Separator());
 		drillDownAdapter.addNavigationActions(manager);
 	}
 
 	private void makeActions() {
 		makeRemoveAllAction();
-		makeStopAllAction();
 		makeDoubleClickAction();
 		makeRemoveProjectAction();
 		makeEditCommandAction();
@@ -279,9 +271,7 @@ public class SbtView extends ViewPart {
 		};
 		addCommandAction.setText("Add command");
 		addCommandAction.setToolTipText("Add command button");
-		addCommandAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_OBJ_ADD));
+		addCommandAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_OBJ_ADD));
 	}
 
 	protected void makeRemoveCommandAction() {
@@ -292,9 +282,7 @@ public class SbtView extends ViewPart {
 		};
 		removeCommandAction.setText("Remove command");
 		removeCommandAction.setToolTipText("Remove command button");
-		removeCommandAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+		removeCommandAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
 
 	protected void makeEditCommandAction() {
@@ -317,22 +305,7 @@ public class SbtView extends ViewPart {
 		removeAllAction.setText("Remove all");
 		removeAllAction
 				.setToolTipText("close all sbt processes and clear view");
-		removeAllAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVEALL));
-	}
-
-	protected void makeStopAllAction() {
-		stopAllAction = new Action() {
-			public void run() {
-				closeAllSbt();
-			}
-		};
-		stopAllAction.setText("Stop all");
-		stopAllAction.setToolTipText("close all sbt processes");
-		stopAllAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_STOP));
+		removeAllAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_ELCL_REMOVEALL));
 	}
 
 	protected void makeDoubleClickAction() {
@@ -352,9 +325,11 @@ public class SbtView extends ViewPart {
 		removeProjectAction.setText("Remove");
 		removeProjectAction
 				.setToolTipText("close project's sbt and remove from view");
-		removeProjectAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+		removeProjectAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+	}
+	
+	protected ImageDescriptor loadImageDescriptor(String image) {
+		return PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(image);
 	}
 	
 	protected void doSetJavaOptionsAction(){
