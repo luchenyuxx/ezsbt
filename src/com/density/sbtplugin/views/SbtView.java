@@ -11,6 +11,7 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
@@ -40,6 +41,7 @@ import org.eclipse.ui.part.DrillDownAdapter;
 import org.eclipse.ui.part.ViewPart;
 
 import com.density.sbtplugin.util.PluginConstants;
+import com.density.sbtplugin.views.SbtViewContentProvider.RootNode;
 
 public class SbtView extends ViewPart {
 
@@ -54,7 +56,6 @@ public class SbtView extends ViewPart {
 	private SbtViewContentProvider viewContentProvider = new SbtViewContentProvider(
 			this);
 	private Action removeAllAction;
-	private Action stopAllAction;
 	private Action removeProjectAction;
 	private Action doubleClickAction;
 	private Action editCommandAction;
@@ -80,7 +81,7 @@ public class SbtView extends ViewPart {
 
 		public Image getImage(Object obj) {
 			String imageKey = ISharedImages.IMG_OBJ_ELEMENT;
-			if (obj instanceof TreeParent)
+			if (obj instanceof ProjectNode)
 				imageKey = ISharedImages.IMG_OBJ_FOLDER;
 			return PlatformUI.getWorkbench().getSharedImages()
 					.getImage(imageKey);
@@ -150,11 +151,11 @@ public class SbtView extends ViewPart {
 			public void keyReleased(KeyEvent e) {
 				if (e.keyCode == PluginConstants.DELETE_KEY_CODE) {
 					Object selectedObject = getSelectedObject();
-					if (selectedObject.getClass().equals(TreeParent.class)) {
-						remove((TreeParent) selectedObject);
+					if (selectedObject.getClass().equals(ProjectNode.class)) {
+						remove((ProjectNode) selectedObject);
 					} else if (selectedObject.getClass().equals(
-							TreeObject.class)) {
-						TreeObject treeObject = (TreeObject) selectedObject;
+							CommandNode.class)) {
+						CommandNode treeObject = (CommandNode) selectedObject;
 						treeObject.getParent().removeChild(treeObject);
 						viewer.refresh();
 					}
@@ -198,42 +199,34 @@ public class SbtView extends ViewPart {
 	private void fillLocalPullDown(IMenuManager manager) {
 		manager.add(removeAllAction);
 		manager.add(new Separator());
-		manager.add(stopAllAction);
 	}
 
 	private void fillContextMenu(IMenuManager manager) {
 		Object obj = getSelectedObject();
-		if (obj.getClass().equals(TreeParent.class)) {
+		if (obj.getClass().equals(ProjectNode.class)) {
 			manager.add(removeProjectAction);
 			manager.add(addCommandAction);
 			manager.add(restartSbtAction);
 			manager.add(setJavaHomeAction);
 			manager.add(setJavaOptionsAction);
 		}
-		if (obj.getClass().equals(TreeObject.class)) {
-			TreeObject target = (TreeObject) obj;
+		if (obj.getClass().equals(CommandNode.class)) {
+			CommandNode target = (CommandNode) obj;
 			if (!target.getName().equals(PluginConstants.START_SBT_NAME)) {
 				manager.add(editCommandAction);
 				manager.add(removeCommandAction);
 			}
 		}
-		// manager.add(removeAllAction);
-		// manager.add(stopAllAction);
-		// manager.add(new Separator());
-		// drillDownAdapter.addNavigationActions(manager);
-		// manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
 
 	private void fillLocalToolBar(IToolBarManager manager) {
 		manager.add(removeAllAction);
-		manager.add(stopAllAction);
 		manager.add(new Separator());
 		drillDownAdapter.addNavigationActions(manager);
 	}
 
 	private void makeActions() {
 		makeRemoveAllAction();
-		makeStopAllAction();
 		makeDoubleClickAction();
 		makeRemoveProjectAction();
 		makeEditCommandAction();
@@ -279,9 +272,7 @@ public class SbtView extends ViewPart {
 		};
 		addCommandAction.setText("Add command");
 		addCommandAction.setToolTipText("Add command button");
-		addCommandAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_OBJ_ADD));
+		addCommandAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_OBJ_ADD));
 	}
 
 	protected void makeRemoveCommandAction() {
@@ -292,9 +283,7 @@ public class SbtView extends ViewPart {
 		};
 		removeCommandAction.setText("Remove command");
 		removeCommandAction.setToolTipText("Remove command button");
-		removeCommandAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+		removeCommandAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
 	}
 
 	protected void makeEditCommandAction() {
@@ -317,22 +306,7 @@ public class SbtView extends ViewPart {
 		removeAllAction.setText("Remove all");
 		removeAllAction
 				.setToolTipText("close all sbt processes and clear view");
-		removeAllAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVEALL));
-	}
-
-	protected void makeStopAllAction() {
-		stopAllAction = new Action() {
-			public void run() {
-				closeAllSbt();
-			}
-		};
-		stopAllAction.setText("Stop all");
-		stopAllAction.setToolTipText("close all sbt processes");
-		stopAllAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_STOP));
+		removeAllAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_ELCL_REMOVEALL));
 	}
 
 	protected void makeDoubleClickAction() {
@@ -352,13 +326,15 @@ public class SbtView extends ViewPart {
 		removeProjectAction.setText("Remove");
 		removeProjectAction
 				.setToolTipText("close project's sbt and remove from view");
-		removeProjectAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+		removeProjectAction.setImageDescriptor(loadImageDescriptor(ISharedImages.IMG_ELCL_REMOVE));
+	}
+	
+	protected ImageDescriptor loadImageDescriptor(String image) {
+		return PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(image);
 	}
 	
 	protected void doSetJavaOptionsAction(){
-		TreeParent container = (TreeParent) getSelectedObject();
+		ProjectNode container = (ProjectNode) getSelectedObject();
 		SetJavaOptionsDialog dialog = new SetJavaOptionsDialog(viewer.getControl()
 				.getShell(), container);
 		dialog.create();
@@ -366,7 +342,7 @@ public class SbtView extends ViewPart {
 	}
 
 	protected void doSetJavaHomeAction() {
-		TreeParent container = (TreeParent) getSelectedObject();
+		ProjectNode container = (ProjectNode) getSelectedObject();
 		SetJavaHomeDialog dialog = new SetJavaHomeDialog(viewer.getControl()
 				.getShell(), container);
 		dialog.create();
@@ -374,18 +350,18 @@ public class SbtView extends ViewPart {
 	}
 
 	protected void doRestartSbtAction() {
-		TreeParent container = (TreeParent) getSelectedObject();
+		ProjectNode container = (ProjectNode) getSelectedObject();
 		restartSbt(container);
 	}
 
 	protected void doRemoveCommandAction() {
-		TreeObject command = (TreeObject) getSelectedObject();
+		CommandNode command = (CommandNode) getSelectedObject();
 		command.getParent().removeChild(command);
 		viewer.refresh();
 	}
 
 	protected void doAddCommandAction() {
-		TreeParent container = (TreeParent) getSelectedObject();
+		ProjectNode container = (ProjectNode) getSelectedObject();
 		AddCommandDialog dialog = new AddCommandDialog(viewer.getControl()
 				.getShell(), container, viewer);
 		dialog.create();
@@ -394,7 +370,7 @@ public class SbtView extends ViewPart {
 
 	protected void doEditCommandAction() {
 		Object obj = getSelectedObject();
-		TreeObject target = (TreeObject) obj;
+		CommandNode target = (CommandNode) obj;
 		EditCommandDialog dialog = new EditCommandDialog(viewer.getControl()
 				.getShell(), target, viewer);
 		dialog.create();
@@ -403,17 +379,17 @@ public class SbtView extends ViewPart {
 
 	protected void doRemoveProjectAction() {
 		Object obj = getSelectedObject();
-		if (obj.getClass().equals(TreeParent.class)) {
-			TreeParent selectedNode = (TreeParent) obj;
+		if (obj.getClass().equals(ProjectNode.class)) {
+			ProjectNode selectedNode = (ProjectNode) obj;
 			remove(selectedNode);
 		}
 	}
 
 	protected void doDoubleClickAction() {
 		Object obj = getSelectedObject();
-		if (obj.getClass().equals(TreeObject.class)) {
-			TreeObject selectedNode = (TreeObject) obj;
-			TreeParent parent = selectedNode.getParent();
+		if (obj.getClass().equals(CommandNode.class)) {
+			CommandNode selectedNode = (CommandNode) obj;
+			ProjectNode parent = selectedNode.getParent();
 			if (selectedNode.getSbtCommand().equals(
 					PluginConstants.EXIT_COMMAND)) {
 				exitSbt(parent);
@@ -442,15 +418,15 @@ public class SbtView extends ViewPart {
 				"Sbt View", message);
 	}
 
-	protected void exitSbt(TreeParent node) {
+	protected void exitSbt(ProjectNode node) {
 		SbtWorkerManager.getSbtWorker(node, this).stopSbt();
 	}
 
-	protected void restartSbt(TreeParent node) {
+	protected void restartSbt(ProjectNode node) {
 		SbtWorkerManager.getSbtWorker(node, this).restartSbt();
 	}
 
-	protected void writeCommand(TreeParent node, String command) {
+	protected void writeCommand(ProjectNode node, String command) {
 		SbtWorkerManager.getSbtWorker(node, this).write(command);
 	}
 
@@ -458,31 +434,30 @@ public class SbtView extends ViewPart {
 		SbtWorkerManager.closeAllSbtWorker();
 	}
 
-	protected void closeSbt(TreeParent project) {
+	protected void closeSbt(ProjectNode project) {
 		SbtWorkerManager.closeSbtWorker(project);
 	}
 
 	protected void cleanView() {
 		SbtViewContentProvider contentProvider = (SbtViewContentProvider) viewer
 				.getContentProvider();
-		contentProvider.setInvisibleRoot(new TreeParent(""));
+		contentProvider.setRoot(new RootNode());
 		viewer.refresh();
 	}
 
-	protected void remove(TreeParent project) {
-		TreeParent root = ((SbtViewContentProvider) viewer.getContentProvider())
-				.getInvisibleRoot();
+	protected void remove(ProjectNode project) {
+		RootNode root = ((SbtViewContentProvider) viewer.getContentProvider())
+				.getRoot();
 		closeSbt(project);
-		root.removeChild(project);
+		root.removeProject(project);
 		viewer.refresh();
 	}
 
 	protected void remove(String projectPath) {
-		TreeParent root = viewContentProvider
-				.getInvisibleRoot();
-		if(SbtWorkerManager.getSbtWorker(projectPath)!=null)
-		SbtWorkerManager.getSbtWorker(projectPath).stopSbt();
-		root.removeChild(projectPath);
+		RootNode root = viewContentProvider
+				.getRoot();
+		SbtWorkerManager.closeSbtWorkerWithPath(projectPath);
+		root.removeProject(projectPath);
 		viewer.refresh();
 	}
 

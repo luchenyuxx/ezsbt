@@ -20,11 +20,11 @@ import com.density.sbtplugin.util.PluginConstants;
 import com.density.sbtplugin.util.SbtPlugin;
 
 public class SetJavaOptionsDialog extends TitleAreaDialog {
-	protected TreeParent node;
+	protected ProjectNode node;
 	protected Text javaOptions;
 	protected final static String TITLE = "Set java options of ";
 
-	public SetJavaOptionsDialog(Shell parentShell, TreeParent node) {
+	public SetJavaOptionsDialog(Shell parentShell, ProjectNode node) {
 		super(parentShell);
 		this.node = node;
 	}
@@ -74,7 +74,7 @@ public class SetJavaOptionsDialog extends TitleAreaDialog {
 	@Override
 	protected void okPressed() {
 		if(!javaOptions.getText().isEmpty()){
-			node.setJavaOptions(Arrays.asList(javaOptions.getText()));
+			node.setJavaOptions(Arrays.asList(javaOptions.getText().split(" ")));
 		}
 		super.okPressed();
 	}

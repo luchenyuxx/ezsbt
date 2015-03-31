@@ -19,14 +19,14 @@ import com.density.sbtplugin.util.PluginConstants;
 import com.density.sbtplugin.util.SbtPlugin;
 
 public class SetJavaHomeDialog extends TitleAreaDialog{
-	protected TreeParent node;
+	protected ProjectNode node;
 	protected Text javaHome;
 	protected final static String TITLE = "Set java home of ";
 	protected final static String MESSAGE = "Value should not be empty. If so, press OK buttion will do nothing.\n"
 			+ "Set java home makes effect the next time SBT starts.\n"
 			+ "Set java home sets the environment variable JAVA_HOME of SBT process.";
 	
-	public SetJavaHomeDialog(Shell parentShell, TreeParent node) {
+	public SetJavaHomeDialog(Shell parentShell, ProjectNode node) {
 		super(parentShell);
 		this.node = node;
 	}

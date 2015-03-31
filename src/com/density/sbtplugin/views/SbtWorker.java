@@ -12,8 +12,11 @@ import java.util.Scanner;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.action.Action;
+import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleConstants;
@@ -29,9 +32,12 @@ public class SbtWorker {
 	protected ViewPart view;
 	protected String projectPath;
 	protected IContainer container;
-	protected TreeParent node;
+	protected ProjectNode node;
 	protected ProcessBuilder processBuilder;
 	protected ConsolePrinter consolePrinter;
+
+	protected IConsoleView consoleView;
+	protected Action consoleViewStopAction;
 
 	protected Process sbtProcess;
 	protected Thread printThread;
@@ -40,7 +46,7 @@ public class SbtWorker {
 
 	public final static String SCANNER_DELIMITER = "\\n|\\r\\n|\\(i\\)gnore\\?";
 
-	public SbtWorker(TreeParent node, ViewPart view) {
+	public SbtWorker(ProjectNode node, ViewPart view) {
 		this.view = view;
 		this.node = node;
 		this.projectPath = node.getName();
@@ -48,6 +54,20 @@ public class SbtWorker {
 		consolePrinter = ConsolePrinterManager.getPrinter(findConsole(
 				projectPath, container));
 		processBuilder = new ProcessBuilder("");
+
+		consoleViewStopAction = new Action() {
+			public void run() {
+				stopSbt();
+				this.setEnabled(false);
+			};
+		};
+		consoleViewStopAction.setImageDescriptor(PlatformUI.getWorkbench()
+				.getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_ELCL_STOP));
+		consoleViewStopAction.setDisabledImageDescriptor(PlatformUI
+				.getWorkbench().getSharedImages()
+				.getImageDescriptor(ISharedImages.IMG_ELCL_STOP_DISABLED));
+		consoleViewStopAction.setToolTipText("Stop SBT process");
 	}
 
 	protected void startSbt() {
@@ -60,8 +80,18 @@ public class SbtWorker {
 			linkInputStream(sbtProcess);
 			linkOutputStream(sbtProcess);
 			startPrintThread();
+			startMonitorThread();
+			consoleViewStopAction.setEnabled(true);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	protected void makeEnvironment(ProcessBuilder processBuilder) {
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			processBuilder.environment().put("PATH", node.getJavaHome()+"\bin");
+		} else {
+			processBuilder.environment().put("JAVA_HOME", node.getJavaHome());
 		}
 	}
 
@@ -72,6 +102,7 @@ public class SbtWorker {
 			sbtProcess = null;
 			printThread = null;
 			processWriter = null;
+			scanner.close();
 			scanner = null;
 		}
 	}
@@ -82,16 +113,27 @@ public class SbtWorker {
 	}
 
 	public void write(String input) {
-		if (!isProcessTerminated()) {
-			MessageConsole console = findConsole(projectPath, container);
-			console.clearConsole();
-			processWriter.println(input);
-			revealConsole(console);
-		} else {
+		MessageConsole console = findConsole(projectPath, container);
+		console.clearConsole();
+		if (isProcessTerminated())
 			startSbt();
-			processWriter.println(input);
-			revealConsole(findConsole(projectPath, container));
-		}
+		processWriter.println(input);
+		revealConsoleView(console);
+	}
+
+	protected void startMonitorThread() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					sbtProcess.waitFor();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} finally {
+					consoleViewStopAction.setEnabled(false);
+				}
+			}
+		}, "SbtMoniterThread").start();
 	}
 
 	protected void startPrintThread() {
@@ -103,7 +145,7 @@ public class SbtWorker {
 					consolePrinter.println(scanner.next());
 				}
 			}
-		});
+		}, "SbtPrintThread");
 		printThread.start();
 	}
 
@@ -119,18 +161,24 @@ public class SbtWorker {
 
 	protected String[] getLaunchCommand() {
 		ArrayList<String> commands = new ArrayList<String>();
-		commands.add("java");
-		commands.addAll(node.getJavaOptions());
 		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			commands.add(getJavaExe());
+			commands.addAll(node.getJavaOptions());
 			commands.add("-Djline.terminal=jline.UnsupportedTerminal");
 			commands.add("-cp");
 			commands.add(getSbtLaunchPath());
 			commands.add("xsbt.boot.Boot");
 		} else {
+			commands.add("java");
+			commands.addAll(node.getJavaOptions());
 			commands.add("-jar");
 			commands.add(getSbtLaunchPath());
 		}
 		return commands.toArray(new String[0]);
+	}
+	
+	protected String getJavaExe(){
+		return node.getJavaHome() + "\\bin\\java.exe";
 	}
 
 	protected String getSbtLaunchPath() {
@@ -156,43 +204,58 @@ public class SbtWorker {
 		for (int i = 0; i < existing.length; i++)
 			if (name.equals(existing[i].getName()))
 				return (MessageConsole) existing[i];
+		return createConsole(name, container, consoleManager);
+	}
+
+	private synchronized MessageConsole createConsole(String name,
+			IContainer container, IConsoleManager consoleManager) {
 		MessageConsole myConsole = new MessageConsole(name, null);
 		consoleManager.addConsoles(new IConsole[] { myConsole });
 		myConsole.addPatternMatchListener(new FileLinkPatternMatchListener(
 				container));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(r\\)etry", "r"));
+				"\\(r\\)etry", "r", node));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(i\\)gnore", "i"));
+				"\\(i\\)gnore", "i", node));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(q\\)uit", "q"));
+				"\\(q\\)uit", "q", node));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(l\\)ast", "l"));
+				"\\(l\\)ast", "l",node));
 		return myConsole;
 	}
 
-	protected void revealConsole(IConsole console) {
+	protected void revealConsoleView(IConsole console) {
 		try {
-			IWorkbenchPage page = view.getSite().getPage();
-			IConsoleView consoleView = (IConsoleView) page
-					.showView(IConsoleConstants.ID_CONSOLE_VIEW);
-			consoleView.display(console);
+			if (consoleView == null)
+				createAndRevealConsoleView(console);
+			view.getSite().getPage().activate(consoleView);
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}
 	}
 
+	protected void createAndRevealConsoleView(IConsole console)
+			throws PartInitException {
+		IWorkbenchPage page = view.getSite().getPage();
+		consoleView = (IConsoleView) page.showView(
+				IConsoleConstants.ID_CONSOLE_VIEW, projectPath.replace(":", ""),
+				IWorkbenchPage.VIEW_CREATE);
+		consoleView.getViewSite().getActionBars().getToolBarManager()
+				.add(consoleViewStopAction);
+		consoleView.display(console);
+	}
+
 	public boolean isWorking() {
 		return !isProcessTerminated();
 	}
-	
-	protected boolean isProcessTerminated(){
-		try{
+
+	protected boolean isProcessTerminated() {
+		try {
 			sbtProcess.exitValue();
 			return true;
-		}catch(IllegalThreadStateException e){
+		} catch (IllegalThreadStateException e) {
 			return false;
-		}catch(NullPointerException e){
+		} catch (NullPointerException e) {
 			return true;
 		}
 	}

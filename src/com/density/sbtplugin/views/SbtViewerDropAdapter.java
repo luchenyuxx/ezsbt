@@ -1,7 +1,5 @@
 package com.density.sbtplugin.views;
 
-import java.util.Arrays;
-
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -11,9 +9,8 @@ import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerDropAdapter;
 import org.eclipse.swt.dnd.TransferData;
 
-import com.density.sbtplugin.util.CommandsConvertor;
-import com.density.sbtplugin.util.PluginConstants;
 import com.density.sbtplugin.util.SbtPlugin;
+import com.density.sbtplugin.views.SbtViewContentProvider.RootNode;
 
 public class SbtViewerDropAdapter extends ViewerDropAdapter {
 
@@ -26,12 +23,12 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 		if (data.getClass().isAssignableFrom(TreeSelection.class)) {
 			TreeSelection treeSelection = (TreeSelection) data;
 			Object obj = treeSelection.getFirstElement();
-			if (IContainer.class.isAssignableFrom(obj.getClass())) {
-				return addNewSbtProject((IContainer) obj);
-			} else if (IJavaProject.class.isAssignableFrom(obj.getClass())) {
+			if (IJavaProject.class.isAssignableFrom(obj.getClass())) {
 				IJavaProject javaProject = (IJavaProject) obj;
 				return addNewSbtProject(javaProject.getProject());
-			}
+			}else if (IContainer.class.isAssignableFrom(obj.getClass())) {
+				return addNewSbtProject((IContainer) obj);
+			} 
 		}
 		return false;
 	}
@@ -40,15 +37,14 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 		if (container.isAccessible()) {
 			SbtViewContentProvider contentProvider = (SbtViewContentProvider) ((TreeViewer) getViewer())
 					.getContentProvider();
-			TreeParent root = contentProvider.getInvisibleRoot();
+			RootNode root = contentProvider.getRoot();
 			String path = getPath(container);
-			if (!root.hasChild(path)) {
-				addNewSbtProject(path, root);
+			if (!root.hasProject(path)) {
+				addNewSbtProject(path, container.getName(), root);
 				return true;
 			}
 		}
 		return false;
-
 	}
 
 	protected String getPath(IContainer container) {
@@ -59,21 +55,10 @@ public class SbtViewerDropAdapter extends ViewerDropAdapter {
 		return path;
 	}
 
-	protected void addNewSbtProject(String path, TreeParent root) {
-		TreeParent newSbtProject = new TreeParent(path);
+	protected void addNewSbtProject(String path, String projectId, RootNode root) {
 		IPreferenceStore store = SbtPlugin.getInstance().getPreferenceStore();
-		String[] commandPairs = CommandsConvertor.stringToArray(store
-				.getString(PluginConstants.COMMANDS_NAME_KEY));
-		for (String commandPair : commandPairs) {
-			TreeObject commandObject = new TreeObject(
-					CommandsConvertor.keyOf(commandPair),
-					CommandsConvertor.valueOf(commandPair));
-			newSbtProject.addChild(commandObject);
-		}
-		newSbtProject.setJavaHome(store
-				.getString(PluginConstants.JAVA_HOME_KEY));
-		newSbtProject.setJavaOptions(Arrays.asList(store.getString(PluginConstants.JAVA_OPTIONS_KEY).split(" ")));
-		root.addChild(newSbtProject);
+		ProjectNode newSbtProject = new ProjectNode(path, projectId,store);
+		root.addProject(newSbtProject);
 		getViewer().refresh();
 	}
 
