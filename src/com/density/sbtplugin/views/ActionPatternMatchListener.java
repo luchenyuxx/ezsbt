@@ -10,11 +10,13 @@ public class ActionPatternMatchListener implements IPatternMatchListener {
 	private TextConsole console;
 	private String pattern;
 	private String command;
+	private ProjectNode node;
 	private final static String LINE_QUALIFIER = "\\(r\\)etry, \\(q\\)uit, \\(l\\)ast, or \\(i\\)gnore\\?";
 
-	public ActionPatternMatchListener(String pattern, String command) {
+	public ActionPatternMatchListener(String pattern, String command, ProjectNode node) {
 		this.pattern = pattern;
 		this.command = command;
+		this.node = node;
 	}
 
 	@Override
@@ -61,8 +63,7 @@ public class ActionPatternMatchListener implements IPatternMatchListener {
 
 			@Override
 			public void linkActivated() {
-				SbtWorker sbtWorker = SbtWorkerManager.getSbtWorker(console
-						.getName());
+				SbtWorker sbtWorker = SbtWorkerManager.getSbtWorker(node);
 				sbtWorker.write(command);
 				if(command.equals("q")) sbtWorker.stopSbt();
 			}

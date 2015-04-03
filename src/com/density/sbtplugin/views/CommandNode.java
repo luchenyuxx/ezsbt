@@ -1,17 +1,15 @@
 package com.density.sbtplugin.views;
 
-import org.eclipse.core.runtime.IAdaptable;
-
-public class TreeObject implements IAdaptable {
-	protected String name;
+public class CommandNode {
+	private String name;
 	private String sbtCommand;
-	private TreeParent parent;
+	private ProjectNode parent;
 
-	public TreeObject(String name) {
+	public CommandNode(String name) {
 		this.name = name;
 	}
 
-	public TreeObject(String name, String sbtCommand) {
+	public CommandNode(String name, String sbtCommand) {
 		super();
 		this.name = name;
 		this.sbtCommand = sbtCommand;
@@ -33,11 +31,11 @@ public class TreeObject implements IAdaptable {
 		return name;
 	}
 
-	public void setParent(TreeParent parent) {
+	public void setParent(ProjectNode parent) {
 		this.parent = parent;
 	}
 
-	public TreeParent getParent() {
+	public ProjectNode getParent() {
 		return parent;
 	}
 
@@ -45,8 +43,4 @@ public class TreeObject implements IAdaptable {
 		return name.substring(name.lastIndexOf("/")+1);
 	}
 
-	@SuppressWarnings("rawtypes")
-	public Object getAdapter(Class key) {
-		return null;
-	}
 }

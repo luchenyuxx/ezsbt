@@ -32,7 +32,7 @@ public class SbtWorker {
 	protected ViewPart view;
 	protected String projectPath;
 	protected IContainer container;
-	protected TreeParent node;
+	protected ProjectNode node;
 	protected ProcessBuilder processBuilder;
 	protected ConsolePrinter consolePrinter;
 
@@ -46,7 +46,7 @@ public class SbtWorker {
 
 	public final static String SCANNER_DELIMITER = "\\n|\\r\\n|\\(i\\)gnore\\?";
 
-	public SbtWorker(TreeParent node, ViewPart view) {
+	public SbtWorker(ProjectNode node, ViewPart view) {
 		this.view = view;
 		this.node = node;
 		this.projectPath = node.getName();
@@ -102,6 +102,7 @@ public class SbtWorker {
 			sbtProcess = null;
 			printThread = null;
 			processWriter = null;
+			scanner.close();
 			scanner = null;
 		}
 	}
@@ -160,18 +161,24 @@ public class SbtWorker {
 
 	protected String[] getLaunchCommand() {
 		ArrayList<String> commands = new ArrayList<String>();
-		commands.add("java");
-		commands.addAll(node.getJavaOptions());
 		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			commands.add(getJavaExe());
+			commands.addAll(node.getJavaOptions());
 			commands.add("-Djline.terminal=jline.UnsupportedTerminal");
 			commands.add("-cp");
 			commands.add(getSbtLaunchPath());
 			commands.add("xsbt.boot.Boot");
 		} else {
+			commands.add("java");
+			commands.addAll(node.getJavaOptions());
 			commands.add("-jar");
 			commands.add(getSbtLaunchPath());
 		}
 		return commands.toArray(new String[0]);
+	}
+	
+	protected String getJavaExe(){
+		return node.getJavaHome() + "\\bin\\java.exe";
 	}
 
 	protected String getSbtLaunchPath() {
@@ -207,13 +214,13 @@ public class SbtWorker {
 		myConsole.addPatternMatchListener(new FileLinkPatternMatchListener(
 				container));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(r\\)etry", "r"));
+				"\\(r\\)etry", "r", node));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(i\\)gnore", "i"));
+				"\\(i\\)gnore", "i", node));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(q\\)uit", "q"));
+				"\\(q\\)uit", "q", node));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
-				"\\(l\\)ast", "l"));
+				"\\(l\\)ast", "l",node));
 		return myConsole;
 	}
 
@@ -231,7 +238,7 @@ public class SbtWorker {
 			throws PartInitException {
 		IWorkbenchPage page = view.getSite().getPage();
 		consoleView = (IConsoleView) page.showView(
-				IConsoleConstants.ID_CONSOLE_VIEW, projectPath,
+				IConsoleConstants.ID_CONSOLE_VIEW, projectPath.replace(":", ""),
 				IWorkbenchPage.VIEW_CREATE);
 		consoleView.getViewSite().getActionBars().getToolBarManager()
 				.add(consoleViewStopAction);

@@ -8,12 +8,12 @@ import org.eclipse.swt.widgets.Shell;
 import com.density.sbtplugin.util.AbstractCommandDialog;
 
 public class EditCommandDialog extends AbstractCommandDialog {
-	private TreeObject target;
+	private CommandNode target;
 	private TreeViewer viewer;
 	private final static String MESSAGE = "The name field should not be empty. If so, press OK buttion will do nothing.";
 	private final static String TITLE = "Edit your command";
 
-	public EditCommandDialog(Shell parentShell, TreeObject target,
+	public EditCommandDialog(Shell parentShell, CommandNode target,
 			TreeViewer viewer) {
 		super(parentShell);
 		this.target = target;

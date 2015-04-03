@@ -6,37 +6,42 @@ import java.util.Map;
 import org.eclipse.ui.part.ViewPart;
 
 public class SbtWorkerManager {
-	static protected Map<String, SbtWorker> workerMap = new HashMap<String, SbtWorker>();
+	static protected Map<ProjectNode, SbtWorker> workerMap = new HashMap<ProjectNode, SbtWorker>();
 
-	static public SbtWorker getSbtWorker(TreeParent node, ViewPart view) {
-		String path = node.getName();
-		if (workerMap.containsKey(path) && workerMap.get(path) != null) {
-			return workerMap.get(path);
-		} else {
-			SbtWorker sbtWorker = new SbtWorker(node, view);
-			workerMap.put(path, sbtWorker);
-			return sbtWorker;
+	static public SbtWorker getSbtWorker(ProjectNode node, ViewPart view) {
+		SbtWorker worker = workerMap.get(node);
+		if (worker == null) {
+			worker = new SbtWorker(node, view);
+			workerMap.put(node, worker);
 		}
+		return worker;
 	}
-	
+
 	/** only for get sbtWorker, won't create new worker. may get null. */
-	static public SbtWorker getSbtWorker(String key){
-		if (workerMap.containsKey(key) && workerMap.get(key) != null) {
-			return workerMap.get(key);
-		}
-		return null;
+	static public SbtWorker getSbtWorker(ProjectNode node) {
+		return workerMap.get(node);
 	}
 
 	static public void closeAllSbtWorker() {
-		for (SbtWorker sbtWorker : workerMap.values()) {
-			sbtWorker.stopSbt();
+		for(SbtWorker worker: workerMap.values()){
+			worker.stopSbt();
+		};
+		workerMap.clear();
+	}
+	
+	static public void closeSbtWorkerWithPath(String projectPath){
+		for(ProjectNode node: workerMap.keySet()){
+			if(projectPath.equals(node.getName())) {
+				workerMap.get(node).stopSbt();
+				workerMap.remove(node);
+			}
 		}
 	}
 
-	static public void closeSbtWorker(TreeParent node) {
-		if (workerMap.containsKey(node.getName())
-				&& workerMap.get(node.getName()) != null) {
-			workerMap.get(node.getName()).stopSbt();
+	static public void closeSbtWorker(ProjectNode node) {
+		if (workerMap.get(node) != null){
+			workerMap.get(node).stopSbt();
+			workerMap.remove(node);
 		}
 	}
 }

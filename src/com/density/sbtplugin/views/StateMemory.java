@@ -1,10 +1,11 @@
 package com.density.sbtplugin.views;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.ui.IMemento;
+
+import com.density.sbtplugin.views.SbtViewContentProvider.RootNode;
 
 public class StateMemory {
 	static public String CONTAINER_TYPE = "container";
@@ -14,23 +15,14 @@ public class StateMemory {
 	static public String COMMAND_VALUE_KEY = "sbtcommand";
 	static public String JAVA_HOME_KEY = "javaHome";
 	static public String JAVA_OPTIONS_KEY = "javaOptions";
+	static public String PROJECT_ID_KEY = "projectId";
 
 	static public void rememberState(SbtViewContentProvider viewContentProvider,
 			IMemento rootMem) {
-		TreeParent root = viewContentProvider.getInvisibleRoot();
-		for (TreeObject containerNode : root.getChildren()) {
-			TreeParent container = (TreeParent) containerNode;
-			IMemento containerMem = rootMem.createChild(CONTAINER_TYPE);
-			containerMem.putString(CONTAINER_NAME_KEY, container.getName());
-			containerMem.putString(JAVA_HOME_KEY, container.getJavaHome());
-			containerMem.putString(JAVA_OPTIONS_KEY, optionsListToString(container.getJavaOptions()));
-			for (TreeObject command : container.getChildren()) {
-				IMemento commandMem = containerMem
-						.createChild(COMMAND_BUTTON_TYPE);
-				commandMem.putString(COMMAND_NAME_KEY, command.getName());
-				commandMem
-						.putString(COMMAND_VALUE_KEY, command.getSbtCommand());
-			}
+		RootNode root = viewContentProvider.getRoot();
+		for (ProjectNode projectNode : root.getProjects()) {
+			IMemento projectMem = rootMem.createChild(CONTAINER_TYPE);
+			projectNode.fillMemory(projectMem);
 		}
 	}
 	
@@ -47,18 +39,9 @@ public class StateMemory {
 
 	static public void remindState(SbtViewContentProvider viewContentProvider,
 			IMemento rootMem) {
-		TreeParent root = viewContentProvider.getInvisibleRoot();
-		for (IMemento containerMem : rootMem.getChildren()) {
-			TreeParent newContainer = new TreeParent(
-					containerMem.getString(CONTAINER_NAME_KEY));
-			newContainer.setJavaHome(containerMem.getString(JAVA_HOME_KEY));
-			newContainer.setJavaOptions(Arrays.asList(containerMem.getString(JAVA_OPTIONS_KEY).split(" ")));
-			for (IMemento commandMem : containerMem.getChildren()) {
-				newContainer.addChild(new TreeObject(commandMem
-						.getString(COMMAND_NAME_KEY), commandMem
-						.getString(COMMAND_VALUE_KEY)));
-			}
-			root.addChild(newContainer);
+		RootNode root = viewContentProvider.getRoot();
+		for (IMemento projectMem : rootMem.getChildren()) {
+			root.addProject(new ProjectNode(projectMem));
 		}
 	}
 }

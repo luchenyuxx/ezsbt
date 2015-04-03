@@ -6,26 +6,26 @@ import org.eclipse.swt.widgets.Shell;
 import com.density.sbtplugin.util.AbstractCommandDialog;
 
 public class AddCommandDialog extends AbstractCommandDialog {
-	private TreeParent target;
+	private ProjectNode target;
 	private TreeViewer viewer;
 	private final static String MESSAGE = "The name field should not be empty. If so, press OK buttion will do nothing.";
 	private final static String TITLE = "Add a command to ";
 
-	public AddCommandDialog(Shell parentShell, TreeParent target,
+	public AddCommandDialog(Shell parentShell, ProjectNode target,
 			TreeViewer viewer) {
 		super(parentShell);
 		this.target = target;
 		this.viewer = viewer;
 	}
 
-	protected TreeObject saveInput() {
-		return new TreeObject(nameInput.getText(), commandInput.getText());
+	protected CommandNode saveInput() {
+		return new CommandNode(nameInput.getText(), commandInput.getText());
 	}
 
 	@Override
 	protected void okPressed() {
 		if (!nameInput.getText().isEmpty()) {
-			TreeObject newCommand = saveInput();
+			CommandNode newCommand = saveInput();
 			target.addChild(newCommand);
 			viewer.refresh();
 		}
