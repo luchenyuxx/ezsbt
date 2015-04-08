@@ -419,7 +419,7 @@ public class SbtView extends ViewPart {
 	}
 
 	protected void exitSbt(ProjectNode node) {
-		SbtWorkerManager.getSbtWorker(node, this).stopSbt();
+		closeSbt(node);
 	}
 
 	protected void restartSbt(ProjectNode node) {

@@ -19,10 +19,10 @@ public class PluginConstants {
 	//key and value in preference store
 	final public static String COMMANDS_SPLITOR = "->";
 	final public static String COMMANDS_NAME_KEY = "#commands";
-	final public static String[] DEFAULT_COMMANDS = {"clean->clean","compile->build"};
+	final public static String[] DEFAULT_COMMANDS = {"clean->clean","compile->build","exit->exit"};
 	final public static String JAVA_HOME_KEY = "#javaHome";
 	final public static String JAVA_OPTIONS_KEY = "#javaOptions";
-	final public static String DEFAULT_JAVA_OPTIONS = "-Xmx1024m -XX:ReservedCodeCacheSize=128m -XX:MaxPermSize=512m -Dsbt.log.noformat=true";
+	final public static String DEFAULT_JAVA_OPTIONS = "-Xmx1024m -XX:ReservedCodeCacheSize=128m -Dsbt.log.noformat=true";
 	final public static String HIDE_RESOLVE_KEY = "#hideResolve";
 	final public static boolean DEFAULT_HIDE_RESOLVE = true;
 	

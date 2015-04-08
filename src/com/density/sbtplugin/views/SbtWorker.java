@@ -12,11 +12,7 @@ import java.util.Scanner;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.jface.action.Action;
-import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleConstants;
@@ -36,9 +32,6 @@ public class SbtWorker {
 	protected ProcessBuilder processBuilder;
 	protected ConsolePrinter consolePrinter;
 
-	protected IConsoleView consoleView;
-	protected Action consoleViewStopAction;
-
 	protected Process sbtProcess;
 	protected Thread printThread;
 	protected PrintWriter processWriter;
@@ -54,20 +47,6 @@ public class SbtWorker {
 		consolePrinter = ConsolePrinterManager.getPrinter(findConsole(
 				projectPath, container));
 		processBuilder = new ProcessBuilder("");
-
-		consoleViewStopAction = new Action() {
-			public void run() {
-				stopSbt();
-				this.setEnabled(false);
-			};
-		};
-		consoleViewStopAction.setImageDescriptor(PlatformUI.getWorkbench()
-				.getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_STOP));
-		consoleViewStopAction.setDisabledImageDescriptor(PlatformUI
-				.getWorkbench().getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_ELCL_STOP_DISABLED));
-		consoleViewStopAction.setToolTipText("Stop SBT process");
 	}
 
 	protected void startSbt() {
@@ -80,8 +59,6 @@ public class SbtWorker {
 			linkInputStream(sbtProcess);
 			linkOutputStream(sbtProcess);
 			startPrintThread();
-			startMonitorThread();
-			consoleViewStopAction.setEnabled(true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -119,21 +96,6 @@ public class SbtWorker {
 			startSbt();
 		processWriter.println(input);
 		revealConsoleView(console);
-	}
-
-	protected void startMonitorThread() {
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					sbtProcess.waitFor();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				} finally {
-					consoleViewStopAction.setEnabled(false);
-				}
-			}
-		}, "SbtMoniterThread").start();
 	}
 
 	protected void startPrintThread() {
@@ -226,23 +188,12 @@ public class SbtWorker {
 
 	protected void revealConsoleView(IConsole console) {
 		try {
-			if (consoleView == null)
-				createAndRevealConsoleView(console);
-			view.getSite().getPage().activate(consoleView);
-		} catch (PartInitException e) {
+			IWorkbenchPage page = view.getSite().getPage();
+			IConsoleView consoleView = (IConsoleView) page.showView(IConsoleConstants.ID_CONSOLE_VIEW);
+			consoleView.display(console);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	protected void createAndRevealConsoleView(IConsole console)
-			throws PartInitException {
-		IWorkbenchPage page = view.getSite().getPage();
-		consoleView = (IConsoleView) page.showView(
-				IConsoleConstants.ID_CONSOLE_VIEW, projectPath.replace(":", ""),
-				IWorkbenchPage.VIEW_CREATE);
-		consoleView.getViewSite().getActionBars().getToolBarManager()
-				.add(consoleViewStopAction);
-		consoleView.display(console);
 	}
 
 	public boolean isWorking() {
