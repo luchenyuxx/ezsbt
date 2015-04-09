@@ -173,6 +173,7 @@ public class SbtWorker {
 			IContainer container, IConsoleManager consoleManager) {
 		MessageConsole myConsole = new MessageConsole(name, null);
 		consoleManager.addConsoles(new IConsole[] { myConsole });
+		myConsole.setConsoleWidth(200);
 		myConsole.addPatternMatchListener(new FileLinkPatternMatchListener(
 				container));
 		myConsole.addPatternMatchListener(new ActionPatternMatchListener(
