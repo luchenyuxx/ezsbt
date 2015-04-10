@@ -1,7 +1,21 @@
-package com.density.sbtplugin.views;
+/* Copyright 2015 Density Technologies
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.util.Arrays;
+package com.density.ezsbt.views;
 
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.SWT;
@@ -16,23 +30,26 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
-import com.density.sbtplugin.util.PluginConstants;
-import com.density.sbtplugin.util.SbtPlugin;
+import com.density.ezsbt.util.PluginConstants;
+import com.density.ezsbt.util.SbtPlugin;
 
-public class SetJavaOptionsDialog extends TitleAreaDialog {
+public class SetJavaHomeDialog extends TitleAreaDialog{
 	protected ProjectNode node;
-	protected Text javaOptions;
-	protected final static String TITLE = "Set java options of ";
-
-	public SetJavaOptionsDialog(Shell parentShell, ProjectNode node) {
+	protected Text javaHome;
+	protected final static String TITLE = "Set java home of ";
+	protected final static String MESSAGE = "Value should not be empty. If so, press OK buttion will do nothing.\n"
+			+ "Set java home makes effect the next time SBT starts.\n"
+			+ "Set java home sets the environment variable JAVA_HOME of SBT process.";
+	
+	public SetJavaHomeDialog(Shell parentShell, ProjectNode node) {
 		super(parentShell);
 		this.node = node;
 	}
-	
 	@Override
 	public void create() {
 		super.create();
 		setTitle(TITLE + node.getName());
+		setMessage(MESSAGE, IMessageProvider.INFORMATION);
 	}
 	
 	@Override
@@ -41,7 +58,7 @@ public class SetJavaOptionsDialog extends TitleAreaDialog {
 		Composite container = new Composite(area, SWT.NONE);
 		container.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,true));
 		container.setLayout(new GridLayout(2, false));
-		createJavaOptionsInput(container);
+		createJavaHomeInput(container);
 		Button defaultButton = new Button(container, SWT.DEFAULT);
 		defaultButton.setText("default");
 		defaultButton.addSelectionListener(new SelectionListener() {
@@ -49,7 +66,7 @@ public class SetJavaOptionsDialog extends TitleAreaDialog {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				IPreferenceStore store = SbtPlugin.getInstance().getPreferenceStore();
-				javaOptions.setText(store.getString(PluginConstants.JAVA_OPTIONS_KEY));
+				javaHome.setText(store.getString(PluginConstants.JAVA_HOME_KEY));
 			}
 			
 			@Override
@@ -58,23 +75,23 @@ public class SetJavaOptionsDialog extends TitleAreaDialog {
 		});
 		return super.createDialogArea(parent);
 	}
-
-	protected void createJavaOptionsInput(Composite container){
+	
+	protected void createJavaHomeInput(Composite container){
 		Label label = new Label(container, SWT.NONE);
-		label.setText("java options:");
+		label.setText("java home:");
 		GridData gridData = new GridData();
 		gridData.grabExcessHorizontalSpace = true;
 		gridData.horizontalAlignment = GridData.FILL;
 
-		javaOptions = new Text(container, SWT.BORDER);
-		javaOptions.setLayoutData(gridData);
-		javaOptions.setText(StateMemory.optionsListToString(node.getJavaOptions()));
+		javaHome = new Text(container, SWT.BORDER);
+		javaHome.setLayoutData(gridData);
+		javaHome.setText(node.getJavaHome());
 	}
 	
 	@Override
 	protected void okPressed() {
-		if(!javaOptions.getText().isEmpty()){
-			node.setJavaOptions(Arrays.asList(javaOptions.getText().split(" ")));
+		if(!javaHome.getText().isEmpty()){
+			node.setJavaHome(javaHome.getText());
 		}
 		super.okPressed();
 	}
