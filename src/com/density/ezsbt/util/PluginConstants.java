@@ -37,7 +37,7 @@ public class PluginConstants {
 	final public static String[] DEFAULT_COMMANDS = {"clean->clean","update->update","compile->compile","reload->reload","exit->exit"};
 	final public static String JAVA_HOME_KEY = "#javaHome";
 	final public static String JAVA_OPTIONS_KEY = "#javaOptions";
-	final public static String DEFAULT_JAVA_OPTIONS = "-XX:PermSize=256m -Xmx512m -Dsbt.log.noformat=true";
+	final public static String DEFAULT_JAVA_OPTIONS = "-Xmx512m -XX:ReservedCodeCacheSize=128m -Dsbt.log.noformat=true";
 	final public static String HIDE_RESOLVE_KEY = "#hideResolve";
 	final public static boolean DEFAULT_HIDE_RESOLVE = true;
 	
